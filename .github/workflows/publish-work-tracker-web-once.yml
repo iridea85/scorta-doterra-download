@@ -1,0 +1,61 @@
+name: Publish Work Tracker Web once
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-work-tracker-web-once.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scarica build Web e Android
+        run: |
+          set -e
+          curl -fL 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-425c-8210-aa53-59dafe0eaf16/raw?se=2026-09-02T09%3A58%3A13Z&sp=r&sv=2026-02-06&sr=b&scid=cea1f551-612c-5444-bb95-7b7c75b4a638&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-01T23%3A26%3A32Z&ske=2026-09-02T23%3A26%3A32Z&sks=b&skv=2026-02-06&sig=6modKtYZEocMZNFn7eCjzn1Sq1Yg9zMS1e7hZHENwBE%3D' -o /tmp/work-tracker-web.zip
+          curl -fL 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-55c8-8210-9f6b-ddce97e3b4ec/raw?se=2026-09-02T09%3A58%3A17Z&sp=r&sv=2026-02-06&sr=b&scid=4df6e71c-9a0d-514c-bda2-0ceeda2dd78f&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T06%3A03%3A54Z&ske=2026-09-03T06%3A03%3A54Z&sks=b&skv=2026-02-06&sig=TOwwki4B20RuP9VHzXK6/u9rA2YzJiALV2TAIjlOd30%3D' -o /tmp/work-tracker-android.zip
+
+          rm -rf work-tracker-web /tmp/wt-web /tmp/wt-android
+          mkdir -p work-tracker-web /tmp/wt-web /tmp/wt-android dist
+
+          unzip -q /tmp/work-tracker-web.zip -d /tmp/wt-web
+          if [ -f /tmp/wt-web/index.html ]; then
+            cp -a /tmp/wt-web/. work-tracker-web/
+          else
+            WEB_ROOT=$(find /tmp/wt-web -type f -name index.html -printf '%h\n' | head -n 1)
+            test -n "$WEB_ROOT"
+            cp -a "$WEB_ROOT"/. work-tracker-web/
+          fi
+
+          unzip -j /tmp/work-tracker-android.zip '*.apk' -d /tmp/wt-android
+          APK_FILE=$(find /tmp/wt-android -type f -name '*.apk' -print -quit)
+          test -n "$APK_FILE"
+          cp "$APK_FILE" dist/Work-Tracker-Android.apk
+
+          test -s work-tracker-web/index.html
+          test -s dist/Work-Tracker-Android.apk
+
+      - name: Pubblica file Web nel repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add work-tracker-web
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Work Tracker web app"
+            git push
+          fi
+
+      - name: Pubblica APK Android aggiornato
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete work-tracker-v65 --yes --cleanup-tag || true
+          gh release create work-tracker-v65             dist/Work-Tracker-Android.apk             --title "Work Tracker - Android Build 65"             --notes "APK Android firmato e aggiornabile. Per iPhone usa la Web App dalla pagina Work Tracker."
