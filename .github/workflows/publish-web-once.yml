@@ -1,0 +1,26 @@
+name: Add web app to public release
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-web-once.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upload-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica web app compilata
+        run: |
+          set -e
+          curl -fL 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-331c-81f5-83a5-95d6e93f04d2/raw?se=2026-09-02T09%3A51%3A55Z&sp=r&sv=2026-02-06&sr=b&scid=bb2dbe94-7a0d-5917-8648-036faf98bbd2&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T07%3A32%3A57Z&ske=2026-09-03T07%3A32%3A57Z&sks=b&skv=2026-02-06&sig=XTwMIvgDMl5mttlfPyhHKvd85LlgI91BNx7bbouedoE%3D' -o /tmp/Scorta-doTERRA-Web.zip
+          test -s /tmp/Scorta-doTERRA-Web.zip
+
+      - name: Aggiungi web app alla release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v1.0.11-it /tmp/Scorta-doTERRA-Web.zip --clobber
