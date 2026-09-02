@@ -34,20 +34,77 @@ jobs:
       - name: Prepara Scorta doTERRA Web App
         run: |
           set -e
-          mkdir -p site/app-v5
+          mkdir -p site/app-v6
           cp index.html site/index.html
 
           curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip"             -o /tmp/Scorta-doTERRA-Web.zip
-          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v5
-          test -s site/app-v5/index.html
+          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v6
+          test -s site/app-v6/index.html
 
-          cat > site/app-v5/manifest.json <<'EOF'
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct, zlib, binascii
+
+          def chunk(kind, data):
+              return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", binascii.crc32(kind + data) & 0xffffffff)
+
+          def write_png(path, size):
+              rows = []
+              for y in range(size):
+                  row = bytearray([0])
+                  ny = (y + 0.5) / size
+                  for x in range(size):
+                      nx = (x + 0.5) / size
+                      t = ny
+                      bg = (
+                          int(124*(1-t) + 92*t),
+                          int(98*(1-t) + 69*t),
+                          int(134*(1-t) + 101*t),
+                          255,
+                      )
+                      dx = nx - 0.5
+                      dy = ny - 0.40
+                      in_circle = (dx*dx + dy*dy) <= 0.22*0.22
+                      in_tail = 0.40 <= ny <= 0.78 and abs(dx) <= 0.22 * (1 - (ny - 0.40)/0.38)
+                      in_drop = in_circle or in_tail
+                      inner = ((nx-0.5)**2 + (ny-0.54)**2) <= 0.095**2
+                      color = (250,247,250,255) if in_drop and not inner else bg
+                      row.extend(color)
+                  rows.append(bytes(row))
+
+              raw = b"".join(rows)
+              data = (
+                  b"\x89PNG\r\n\x1a\n" +
+                  chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)) +
+                  chunk(b"IDAT", zlib.compress(raw, 9)) +
+                  chunk(b"IEND", b"")
+              )
+              p = Path(path)
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_bytes(data)
+
+          write_png("site/app-v6/icons/Icon-192.png", 192)
+          write_png("site/app-v6/icons/Icon-512.png", 512)
+          PY
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          for p in [Path("site/app-v6/icons/Icon-192.png"), Path("site/app-v6/icons/Icon-512.png")]:
+              data=p.read_bytes()
+              assert data[:8] == b"\x89PNG\r\n\x1a\n"
+              w,h=struct.unpack(">II", data[16:24])
+              assert (w,h) in [(192,192),(512,512)]
+              print("ICON OK", p, w, h, len(data))
+          PY
+
+          cat > site/app-v6/manifest.json <<'EOF'
           {
-            "id": "/scorta-doterra-download/app-v5/",
+            "id": "/scorta-doterra-download/app-v6/",
             "name": "Scorta doTERRA",
             "short_name": "Scorta",
-            "start_url": "/scorta-doterra-download/app-v5/",
-            "scope": "/scorta-doterra-download/app-v5/",
+            "start_url": "/scorta-doterra-download/app-v6/",
+            "scope": "/scorta-doterra-download/app-v6/",
             "display": "standalone",
             "display_override": ["standalone", "minimal-ui"],
             "background_color": "#F7F5F7",
@@ -78,7 +135,7 @@ jobs:
           }
           EOF
 
-          cat > site/app-v5/install-helper-v5.js <<'EOF'
+          cat > site/app-v6/install-helper-v6.js <<'EOF'
           (() => {
             const standalone =
               window.matchMedia('(display-mode: standalone)').matches ||
@@ -168,15 +225,15 @@ jobs:
 
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.register(
-                'flutter_service_worker.js?v=scorta-pwa-v6',
+                'flutter_service_worker.js?v=scorta-pwa-v7',
                 { scope: './' }
               ).then(() => navigator.serviceWorker.ready)
                .then(() => {
                  if (
                    !navigator.serviceWorker.controller &&
-                   sessionStorage.getItem('scorta-sw-reload-v6') !== '1'
+                   sessionStorage.getItem('scorta-sw-reload-v7') !== '1'
                  ) {
-                   sessionStorage.setItem('scorta-sw-reload-v6', '1');
+                   sessionStorage.setItem('scorta-sw-reload-v7', '1');
                    location.reload();
                  }
                })
@@ -218,20 +275,20 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("site/app-v5/index.html")
+          p = Path("site/app-v6/index.html")
           s = p.read_text(encoding="utf-8")
           s = s.replace(
               '<base href="/scorta-doterra-download/app/">',
-              '<base href="/scorta-doterra-download/app-v5/">'
+              '<base href="/scorta-doterra-download/app-v6/">'
           )
           marker = '<script src="flutter_bootstrap.js" async></script>'
-          if '<script src="install-helper-v5.js"></script>' not in s:
-              s = s.replace(marker, '<script src="install-helper-v5.js"></script>\n  ' + marker)
+          if '<script src="install-helper-v6.js"></script>' not in s:
+              s = s.replace(marker, '<script src="install-helper-v6.js"></script>\n  ' + marker)
           p.write_text(s, encoding="utf-8")
           PY
 
-          cat > site/app-v5/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME = 'scorta-doterra-pwa-v6';
+          cat > site/app-v6/flutter_service_worker.js <<'EOF'
+          const CACHE_NAME = 'scorta-doterra-pwa-v7';
 
           self.addEventListener('install', (event) => {
             event.waitUntil(
@@ -286,11 +343,11 @@ jobs:
           from pathlib import Path
           import re
 
-          p = Path("site/app-v5/flutter_bootstrap.js")
+          p = Path("site/app-v6/flutter_bootstrap.js")
           s = p.read_text(encoding="utf-8")
           s, n = re.subn(
               r'serviceWorkerVersion:\s*"[^"]+"',
-              'serviceWorkerVersion: "scorta-pwa-v6"',
+              'serviceWorkerVersion: "scorta-pwa-v7"',
               s,
               count=1
           )
@@ -299,9 +356,9 @@ jobs:
           p.write_text(s, encoding="utf-8")
           PY
 
-          test -s site/app-v5/flutter_service_worker.js
-          grep -q "self.clients.claim" site/app-v5/flutter_service_worker.js
-          grep -q 'serviceWorkerVersion: "scorta-pwa-v6"' site/app-v5/flutter_bootstrap.js
+          test -s site/app-v6/flutter_service_worker.js
+          grep -q "self.clients.claim" site/app-v6/flutter_service_worker.js
+          grep -q 'serviceWorkerVersion: "scorta-pwa-v7"' site/app-v6/flutter_bootstrap.js
 
       - name: Mantieni pagina Ore
         run: |
