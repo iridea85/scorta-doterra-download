@@ -85,52 +85,78 @@ jobs:
               window.navigator.standalone === true;
             if (standalone) return;
 
+            const ua = navigator.userAgent || '';
+            const isIOS =
+              /iPhone|iPad|iPod/i.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
             let deferredPrompt = null;
             let installButton = null;
+
+            const ensureButton = () => {
+              if (installButton) return installButton;
+
+              installButton = document.createElement('button');
+              installButton.type = 'button';
+              installButton.setAttribute('aria-label', 'Installa Scorta doTERRA');
+              installButton.innerHTML =
+                '<span style="font-size:18px;line-height:1">⇩</span><span>Installa</span>';
+
+              Object.assign(installButton.style, {
+                position: 'fixed',
+                top: 'calc(10px + env(safe-area-inset-top))',
+                right: '12px',
+                zIndex: '99999',
+                border: '1px solid rgba(110,85,120,.18)',
+                borderRadius: '14px',
+                padding: '9px 12px',
+                background: '#FFFFFF',
+                color: '#6E5578',
+                fontSize: '14px',
+                fontWeight: '800',
+                lineHeight: '1',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 6px 18px rgba(50,34,56,.12)',
+                WebkitTapHighlightColor: 'transparent'
+              });
+
+              document.body.appendChild(installButton);
+              return installButton;
+            };
 
             const removeButton = () => {
               if (installButton) installButton.remove();
               installButton = null;
             };
 
+            if (isIOS) {
+              const button = ensureButton();
+              button.addEventListener('click', () => {
+                alert(
+                  'Per installare Scorta doTERRA su iPhone:\\n\\n' +
+                  '1. Apri questa pagina in Safari\\n' +
+                  '2. Tocca Condividi\\n' +
+                  '3. Tocca “Aggiungi alla schermata Home”\\n' +
+                  '4. Tocca Aggiungi'
+                );
+              });
+            }
+
             window.addEventListener('beforeinstallprompt', (event) => {
               event.preventDefault();
               deferredPrompt = event;
-              if (installButton) return;
 
-              installButton = document.createElement('button');
-              installButton.type = 'button';
-              installButton.textContent = 'Installa Scorta doTERRA';
-              installButton.setAttribute('aria-label', 'Installa Scorta doTERRA');
-
-              Object.assign(installButton.style, {
-                position: 'fixed',
-                left: '50%',
-                bottom: 'calc(18px + env(safe-area-inset-bottom))',
-                transform: 'translateX(-50%)',
-                zIndex: '99999',
-                border: '0',
-                borderRadius: '18px',
-                padding: '15px 22px',
-                background: '#6E5578',
-                color: '#FFFFFF',
-                fontSize: '16px',
-                fontWeight: '800',
-                boxShadow: '0 12px 30px rgba(50,34,56,.28)',
-                maxWidth: 'calc(100vw - 32px)',
-                whiteSpace: 'nowrap'
-              });
-
-              installButton.addEventListener('click', async () => {
+              const button = ensureButton();
+              button.onclick = async () => {
                 if (!deferredPrompt) return;
-                installButton.disabled = true;
+                button.disabled = true;
                 await deferredPrompt.prompt();
                 await deferredPrompt.userChoice;
                 deferredPrompt = null;
                 removeButton();
-              });
-
-              document.body.appendChild(installButton);
+              };
             });
 
             window.addEventListener('appinstalled', removeButton);
