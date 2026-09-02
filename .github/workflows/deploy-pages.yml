@@ -1,0 +1,65 @@
+name: Deploy all download pages
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "index.html"
+      - "ore/**"
+      - "work-tracker-web/**"
+      - "Work-Tracker-Android.apk"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepara Scorta doTERRA
+        run: |
+          set -e
+          mkdir -p site/app
+          cp index.html site/index.html
+
+          curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA.apk"             -o site/Scorta-doTERRA.apk
+          test -s site/Scorta-doTERRA.apk
+
+          curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip"             -o /tmp/Scorta-doTERRA-Web.zip
+          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app
+          test -s site/app/index.html
+
+      - name: Mantieni pagina Ore
+        run: |
+          set -e
+          if [ -d ore ]; then cp -R ore site/ore; fi
+          if [ -d work-tracker-web ]; then cp -R work-tracker-web site/work-tracker-web; fi
+          if [ -f Work-Tracker-Android.apk ]; then cp Work-Tracker-Android.apk site/Work-Tracker-Android.apk; fi
+          touch site/.nojekyll
+
+      - name: Configura GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Carica sito
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Pubblica
+        id: deployment
+        uses: actions/deploy-pages@v4
