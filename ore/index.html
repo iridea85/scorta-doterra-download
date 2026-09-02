@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#355C66">
+  <meta name="description" content="Scarica Work Tracker per Android e iPhone.">
+  <title>Scarica Work Tracker</title>
+  <style>
+    :root{--bg:#f5f7f8;--card:#fff;--ink:#24343a;--muted:#6f7a7e;--brand:#355c66;--brand2:#294850;--soft:#e8f0f2;--ok:#4f8062;--oksoft:#e9f2ec;--line:#e2e8ea;--shadow:0 18px 50px rgba(42,71,79,.12)}
+    *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+    body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 10% 0%,#e3ecef 0,transparent 34rem),linear-gradient(180deg,#fbfcfc 0%,var(--bg) 100%);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    .wrap{width:min(780px,calc(100% - 28px));margin:auto;padding:36px 0 48px}.hero{text-align:center;padding:12px 10px 26px}
+    .mark{width:86px;height:86px;display:grid;place-items:center;margin:0 auto 18px;border-radius:27px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+    .clock{width:45px;height:45px;border:4px solid var(--brand);border-radius:50%;position:relative}.clock:before,.clock:after{content:"";position:absolute;left:50%;top:50%;width:4px;border-radius:99px;background:var(--brand);transform-origin:50% 100%}.clock:before{height:14px;transform:translate(-50%,-100%)}.clock:after{height:12px;transform:translate(-50%,-100%) rotate(120deg)}
+    h1{margin:0;font-size:clamp(36px,8vw,54px);line-height:1.02;letter-spacing:-1.8px}.subtitle{margin:13px auto 0;max-width:620px;color:var(--muted);font-size:17px;line-height:1.55}
+    .status{display:inline-flex;align-items:center;gap:7px;margin-top:17px;padding:7px 12px;border-radius:999px;background:var(--oksoft);color:var(--ok);font-size:13px;font-weight:800}.status:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+    .downloads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:23px;box-shadow:0 12px 38px rgba(42,71,79,.08)}
+    .platform{display:flex;gap:14px;align-items:center;margin-bottom:18px}.icon{width:50px;height:50px;flex:0 0 50px;border-radius:16px;display:grid;place-items:center;background:var(--soft);color:var(--brand);font-size:25px;font-weight:900}
+    .platform h2{margin:0;font-size:22px;letter-spacing:-.4px}.platform p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .btn{display:flex;width:100%;min-height:56px;align-items:center;justify-content:center;gap:9px;text-decoration:none;border-radius:16px;padding:13px 16px;background:var(--brand);color:#fff;font-weight:900;font-size:15px;transition:.12s ease}.btn:hover{background:var(--brand2)}.btn:active{transform:scale(.985)}.btn.apple{background:#24282b}
+    .note{margin:13px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.detected{outline:3px solid rgba(53,92,102,.18);position:relative}.detected:before{content:"Questo è il tuo dispositivo";position:absolute;top:-11px;left:20px;padding:4px 9px;background:var(--brand);color:white;font-size:10px;border-radius:999px;font-weight:900}
+    .info{margin-top:18px;background:rgba(255,255,255,.76);border:1px solid var(--line);border-radius:22px;padding:18px;color:var(--muted);font-size:13px;line-height:1.6}.info strong{color:var(--ink)}.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.chip{padding:6px 9px;border-radius:999px;background:var(--soft);color:var(--brand);font-size:11px;font-weight:800}
+    footer{text-align:center;color:#929da0;font-size:11px;line-height:1.5;margin-top:24px;padding:0 18px}@media(max-width:650px){.wrap{width:min(100% - 22px,780px);padding-top:22px}.downloads{grid-template-columns:1fr}.card{padding:20px}.hero{padding-bottom:18px}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero"><div class="mark" aria-hidden="true"><div class="clock"></div></div><h1>Work Tracker</h1><p class="subtitle">Scarica l'app per registrare entrate e uscite, controllare ore e straordinari, gestire ferie e assenze e consultare tutto dal calendario.</p><div class="status">Versione disponibile</div></section>
+  <section class="downloads">
+    <article class="card" id="android-card"><div class="platform"><div class="icon">A</div><div><h2>Android</h2><p>APK firmato • Build #49</p></div></div><a class="btn" href="./Work-Tracker-Android.apk" download>↓ Scarica per Android</a><p class="note">Puoi installarla sopra la versione già presente: non serve disinstallare l'app e i dati restano sul dispositivo.</p></article>
+    <article class="card" id="ios-card"><div class="platform"><div class="icon"></div><div><h2>iPhone / Apple</h2><p>IPA compilato • Build iOS #3</p></div></div><a class="btn apple" href="./Work-Tracker-iPhone-UNSIGNED.ipa" download>↓ Scarica per iPhone</a><p class="note">Il file iPhone è compilato ma non è ancora firmato Apple: per installarlo normalmente servirà firma Apple/TestFlight.</p></article>
+  </section>
+  <section class="info"><strong>Un'unica app per la tua giornata lavorativa.</strong> Calendario mensile ed elenco, inserimento manuale, geofencing, notifiche, statistiche, backup e gestione delle assenze anche prima o dopo la giornata.<div class="chips"><span class="chip">Calendario</span><span class="chip">Ferie e assenze</span><span class="chip">Straordinari</span><span class="chip">Geofencing</span><span class="chip">Backup</span></div></section>
+  <footer>Work Tracker • pagina download Android e Apple</footer>
+</main>
+<script>(function(){var ua=navigator.userAgent||"";var android=/Android/i.test(ua);var ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(android)document.getElementById("android-card").classList.add("detected");if(ios)document.getElementById("ios-card").classList.add("detected")})();</script>
+</body>
+</html>
