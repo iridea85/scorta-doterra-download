@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#294f5a">
+  <meta name="description" content="Scarica Work Tracker per Android.">
+  <title>Work Tracker Android</title>
+  <style>
+    :root{
+      --bg:#eef4f5;
+      --surface:#ffffff;
+      --ink:#173039;
+      --muted:#6c7d82;
+      --brand:#355c66;
+      --brand-dark:#284b55;
+      --soft:#e8f1f3;
+      --line:rgba(53,92,102,.12);
+      --ok:#4f8062;
+      --ok-bg:#eaf3ed;
+      --shadow:0 24px 70px rgba(30,65,74,.14);
+      --shadow-soft:0 14px 36px rgba(30,65,74,.10);
+    }
+
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(95,148,160,.22), transparent 28rem),
+        radial-gradient(circle at 100% 30%, rgba(144,184,193,.17), transparent 24rem),
+        linear-gradient(180deg,#fbfcfc 0%,var(--bg) 100%);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    }
+
+    .page{
+      width:min(640px,calc(100% - 24px));
+      margin:0 auto;
+      padding:34px 0 48px;
+    }
+
+    .hero{
+      text-align:center;
+      padding:8px 12px 26px;
+    }
+
+    .app-icon{
+      width:102px;
+      height:102px;
+      margin:0 auto 20px;
+      border-radius:31px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(145deg,#426f7a,#294d56);
+      box-shadow:0 24px 46px rgba(40,77,86,.25);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .app-icon:after{
+      content:"";
+      position:absolute;
+      inset:1px;
+      border-radius:30px;
+      border:1px solid rgba(255,255,255,.24);
+    }
+
+    .clock{
+      width:52px;
+      height:52px;
+      border:4px solid #fff;
+      border-radius:50%;
+      position:relative;
+    }
+
+    .clock:before,.clock:after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:4px;
+      border-radius:99px;
+      background:#fff;
+      transform-origin:50% 100%;
+    }
+
+    .clock:before{
+      height:16px;
+      transform:translate(-50%,-100%);
+    }
+
+    .clock:after{
+      height:14px;
+      transform:translate(-50%,-100%) rotate(125deg);
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(40px,10vw,58px);
+      line-height:1;
+      letter-spacing:-2px;
+      font-weight:900;
+    }
+
+    .subtitle{
+      margin:14px auto 0;
+      max-width:520px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.55;
+    }
+
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      margin-top:17px;
+      padding:7px 12px;
+      border-radius:999px;
+      background:var(--ok-bg);
+      color:var(--ok);
+      font-size:12px;
+      font-weight:900;
+    }
+
+    .status:before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:currentColor;
+    }
+
+    .download-card{
+      margin-top:6px;
+      padding:26px;
+      border-radius:32px;
+      background:rgba(255,255,255,.91);
+      backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px);
+      border:1px solid rgba(255,255,255,.84);
+      box-shadow:var(--shadow);
+    }
+
+    .android-head{
+      display:flex;
+      align-items:center;
+      gap:15px;
+      margin-bottom:20px;
+    }
+
+    .android-icon{
+      width:62px;
+      height:62px;
+      border-radius:20px;
+      display:grid;
+      place-items:center;
+      background:var(--soft);
+      color:var(--brand);
+      font-size:31px;
+      font-weight:900;
+      flex:0 0 62px;
+    }
+
+    .android-title{
+      margin:0;
+      font-size:25px;
+      font-weight:900;
+      letter-spacing:-.5px;
+    }
+
+    .android-meta{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .download-button{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      width:100%;
+      min-height:62px;
+      padding:15px 18px;
+      border-radius:19px;
+      text-decoration:none;
+      color:#fff;
+      background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+      box-shadow:0 12px 25px rgba(53,92,102,.23);
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:-.2px;
+      transition:transform .12s ease,filter .12s ease;
+    }
+
+    .download-button:active{transform:scale(.985)}
+    .download-button:hover{filter:brightness(.98)}
+
+    .arrow{
+      font-size:22px;
+      line-height:1;
+      transform:translateY(-1px);
+    }
+
+    .install-note{
+      margin:15px 3px 0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+      text-align:center;
+    }
+
+    .features{
+      margin-top:18px;
+      padding:18px 20px;
+      border-radius:24px;
+      background:rgba(255,255,255,.62);
+      border:1px solid var(--line);
+    }
+
+    .features-title{
+      margin:0 0 11px;
+      text-align:center;
+      font-size:13px;
+      color:#617a81;
+      font-weight:900;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+    }
+
+    .chips{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .chip{
+      padding:7px 10px;
+      border-radius:999px;
+      background:var(--soft);
+      color:var(--brand);
+      font-size:11px;
+      font-weight:800;
+    }
+
+    footer{
+      text-align:center;
+      color:#96a2a6;
+      font-size:11px;
+      margin-top:22px;
+    }
+
+    @media(max-width:520px){
+      .page{width:min(100% - 18px,640px);padding-top:22px}
+      .download-card{padding:21px}
+      .app-icon{width:92px;height:92px;border-radius:28px}
+      h1{font-size:42px}
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="app-icon" aria-hidden="true">
+        <div class="clock"></div>
+      </div>
+      <h1>Work Tracker</h1>
+      <p class="subtitle">
+        La tua app Android per gestire ore, calendario, straordinari, ferie e assenze.
+      </p>
+      <div class="status">Versione Android disponibile</div>
+    </section>
+
+    <section class="download-card">
+      <div class="android-head">
+        <div class="android-icon" aria-hidden="true">A</div>
+        <div>
+          <h2 class="android-title">Android</h2>
+          <p class="android-meta">APK firmato • Build #65</p>
+        </div>
+      </div>
+
+      <a
+        class="download-button"
+        id="android-download"
+        href="https://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk"
+      >
+        <span class="arrow">↓</span>
+        Scarica Work Tracker
+      </a>
+
+      <p class="install-note">
+        Puoi installarla sopra la versione già presente senza disinstallare l’app e senza perdere i tuoi dati.
+      </p>
+    </section>
+
+    <section class="features">
+      <p class="features-title">Dentro Work Tracker</p>
+      <div class="chips">
+        <span class="chip">Calendario</span>
+        <span class="chip">Straordinari</span>
+        <span class="chip">Ferie e assenze</span>
+        <span class="chip">Geofencing</span>
+        <span class="chip">Notifiche</span>
+        <span class="chip">Backup</span>
+      </div>
+    </section>
+
+    <footer>Work Tracker • Android</footer>
+  </main>
+
+  <script>
+    (function(){
+      var ua=navigator.userAgent||"";
+      var android=/Android/i.test(ua);
+      var androidLink=document.getElementById("android-download");
+
+      if(android&&androidLink){
+        androidLink.addEventListener("click",function(e){
+          e.preventDefault();
+          window.location.href=
+            "intent://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fgithub.com%2Firidea85%2Fscorta-doterra-download%2Freleases%2Fdownload%2Fwork-tracker-v65%2FWork-Tracker-Android.apk;end";
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
