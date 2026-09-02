@@ -190,6 +190,10 @@ jobs:
           from pathlib import Path
           p = Path("site/app-v2/index.html")
           s = p.read_text(encoding="utf-8")
+          s = s.replace(
+              '<base href="/scorta-doterra-download/app/">',
+              '<base href="/scorta-doterra-download/app-v2/">'
+          )
           marker = '<script src="flutter_bootstrap.js" async></script>'
           if '<script src="install-helper-v2.js"></script>' not in s:
               s = s.replace(marker, '<script src="install-helper-v2.js"></script>\n  ' + marker)
