@@ -28,12 +28,28 @@
 <main class="wrap">
   <section class="hero"><div class="mark" aria-hidden="true"><div class="clock"></div></div><h1>Work Tracker</h1><p class="subtitle">Scarica l'app per registrare entrate e uscite, controllare ore e straordinari, gestire ferie e assenze e consultare tutto dal calendario.</p><div class="status">Versione disponibile</div></section>
   <section class="downloads">
-    <article class="card" id="android-card"><div class="platform"><div class="icon">A</div><div><h2>Android</h2><p>APK firmato • Build #65</p></div></div><a class="btn" href="https://raw.githubusercontent.com/iridea85/scorta-doterra-download/main/Work-Tracker-Android.apk">↓ Scarica per Android</a><p class="note">Puoi installarla sopra la versione già presente: non serve disinstallare l'app e i dati restano sul dispositivo.</p></article>
+    <article class="card" id="android-card"><div class="platform"><div class="icon">A</div><div><h2>Android</h2><p>APK firmato • Build #65</p></div></div><a class="btn" id="android-download" href="https://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk">↓ Scarica per Android</a><p class="note">Puoi installarla sopra la versione già presente: non serve disinstallare l'app e i dati restano sul dispositivo.</p></article>
     <article class="card" id="ios-card"><div class="platform"><div class="icon"></div><div><h2>iPhone / Apple</h2><p>Web app • nessuna firma Apple</p></div></div><a class="btn apple" href="https://raw.githack.com/iridea85/scorta-doterra-download/main/work-tracker-web/index.html">Apri Web App su iPhone</a><p class="note">Aprila con Safari e usa Condividi → Aggiungi alla schermata Home. La versione web non può usare il geofencing e le notifiche native in background come l’app Android.</p></article>
   </section>
   <section class="info"><strong>Un'unica app per la tua giornata lavorativa.</strong> Calendario mensile ed elenco, inserimento manuale, geofencing, notifiche, statistiche, backup e gestione delle assenze anche prima o dopo la giornata.<div class="chips"><span class="chip">Calendario</span><span class="chip">Ferie e assenze</span><span class="chip">Straordinari</span><span class="chip">Geofencing</span><span class="chip">Backup</span></div></section>
   <footer>Work Tracker • Android + Web App iPhone</footer>
 </main>
-<script>(function(){var ua=navigator.userAgent||"";var android=/Android/i.test(ua);var ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);if(android)document.getElementById("android-card").classList.add("detected");if(ios)document.getElementById("ios-card").classList.add("detected")})();</script>
+<script>
+(function(){
+  var ua=navigator.userAgent||"";
+  var android=/Android/i.test(ua);
+  var ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  if(android)document.getElementById("android-card").classList.add("detected");
+  if(ios)document.getElementById("ios-card").classList.add("detected");
+
+  var androidLink=document.getElementById("android-download");
+  if(android && androidLink){
+    androidLink.addEventListener("click",function(e){
+      e.preventDefault();
+      window.location.href="intent://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fgithub.com%2Firidea85%2Fscorta-doterra-download%2Freleases%2Fdownload%2Fwork-tracker-v65%2FWork-Tracker-Android.apk;end";
+    });
+  }
+})();
+</script>
 </body>
 </html>
