@@ -17,7 +17,7 @@ jobs:
       - name: Scarica web app compilata
         run: |
           set -e
-          curl -fL 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-331c-81f5-83a5-95d6e93f04d2/raw?se=2026-09-02T09%3A51%3A55Z&sp=r&sv=2026-02-06&sr=b&scid=bb2dbe94-7a0d-5917-8648-036faf98bbd2&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T07%3A32%3A57Z&ske=2026-09-03T07%3A32%3A57Z&sks=b&skv=2026-02-06&sig=XTwMIvgDMl5mttlfPyhHKvd85LlgI91BNx7bbouedoE%3D' -o /tmp/Scorta-doTERRA-Web.zip
+          curl -fL 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-33f8-8210-a6b5-21ede2d15b5e/raw?se=2026-09-02T10%3A52%3A55Z&sp=r&sv=2026-02-06&sr=b&scid=9f9ab3d3-a90c-5da8-a645-adda0f4c338f&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T07%3A32%3A54Z&ske=2026-09-03T07%3A32%3A54Z&sks=b&skv=2026-02-06&sig=8T9o1HnWKNGglp46JHCHkt9dMbqqnVfri7Vpht7zol8%3D' -o /tmp/Scorta-doTERRA-Web.zip
           test -s /tmp/Scorta-doTERRA-Web.zip
 
       - name: Aggiungi web app alla release
