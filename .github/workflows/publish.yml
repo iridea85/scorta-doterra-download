@@ -6,21 +6,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 jobs:
-  deploy:
+  release:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,28 +18,19 @@ jobs:
       - name: Scarica build Android e iPhone
         run: |
           set -e
-          curl -fL 'https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-7f60-820a-ac43-b9d8aef87948/raw?se=2026-09-02T09%3A29%3A36Z&sp=r&sv=2026-02-06&sr=b&scid=5e9cf050-4f9e-5698-a163-84d962b340e2&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-01T22%3A37%3A49Z&ske=2026-09-02T22%3A37%3A49Z&sks=b&skv=2026-02-06&sig=v29ZhMqcA4iMq30PAhsHJ0Hlxcv8gVmauqOqU2VOvVQ%3D' -o /tmp/android.zip
-          curl -fL 'https://sdmntprnorthcentralus.oaiusercontent.com/files/00000000-7f08-822f-9752-fbf60563442c/raw?se=2026-09-02T09%3A29%3A38Z&sp=r&sv=2026-02-06&sr=b&scid=99987245-4b6e-594f-99ae-7b1648056c62&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T06%3A34%3A59Z&ske=2026-09-03T06%3A34%3A59Z&sks=b&skv=2026-02-06&sig=45NLO7sr1cKwYC0E5v7D41XexFNcpItr8No%2Bg6H9uo8%3D' -o /tmp/ios.zip
-          mkdir -p /tmp/android /tmp/ios site
+          curl -fL 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-9a4c-81f4-908a-6ae91dd98604/raw?se=2026-09-02T09%3A31%3A28Z&sp=r&sv=2026-02-06&sr=b&scid=f7946844-4ef9-56be-a47d-099d6c331ebf&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-01T22%3A37%3A49Z&ske=2026-09-02T22%3A37%3A49Z&sks=b&skv=2026-02-06&sig=4A4k5BFEr6tuTe0K067BtNh3HUI1e1sfnt%2BQ2syDSY4%3D' -o /tmp/android.zip
+          curl -fL 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-f58c-81f5-b490-fe3b8eb31bcb/raw?se=2026-09-02T09%3A31%3A29Z&sp=r&sv=2026-02-06&sr=b&scid=f9058771-0f7e-524b-86c3-974d001f631e&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T06%3A34%3A57Z&ske=2026-09-03T06%3A34%3A57Z&sks=b&skv=2026-02-06&sig=3CBF3pTwaM5S/wNVoX4fkQWtAF0G%2BZNwjvAUoGD0KJw%3D' -o /tmp/ios.zip
+          mkdir -p /tmp/android /tmp/ios dist
           unzip -j /tmp/android.zip '*.apk' -d /tmp/android
           unzip -j /tmp/ios.zip '*.ipa' -d /tmp/ios
-          cp "$(find /tmp/android -type f -name '*.apk' -print -quit)" site/Scorta-doTERRA.apk
-          cp "$(find /tmp/ios -type f -name '*.ipa' -print -quit)" site/Scorta-doTERRA-iPhone-UNSIGNED.ipa
-          cp index.html site/index.html
-          touch site/.nojekyll
-          test -s site/Scorta-doTERRA.apk
-          test -s site/Scorta-doTERRA-iPhone-UNSIGNED.ipa
+          cp "$(find /tmp/android -type f -name '*.apk' -print -quit)" dist/Scorta-doTERRA.apk
+          cp "$(find /tmp/ios -type f -name '*.ipa' -print -quit)" dist/Scorta-doTERRA-iPhone-UNSIGNED.ipa
+          test -s dist/Scorta-doTERRA.apk
+          test -s dist/Scorta-doTERRA-iPhone-UNSIGNED.ipa
 
-      - name: Configura GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Carica sito
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: site
-
-      - name: Pubblica
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Pubblica Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v1.0.11-it --yes --cleanup-tag || true
+          gh release create v1.0.11-it             dist/Scorta-doTERRA.apk             dist/Scorta-doTERRA-iPhone-UNSIGNED.ipa             --title "Scorta doTERRA - Catalogo italiano"             --notes "Versione con catalogo doTERRA in italiano. Android APK firmato e aggiornabile. iPhone IPA compilato ma non firmato Apple."             --latest
