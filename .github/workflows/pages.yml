@@ -1,0 +1,61 @@
+name: Publish Work Tracker downloads
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Prepare site and app files
+        run: |
+          set -e
+          mkdir -p site/ore /tmp/android /tmp/ios
+          cp ore/index.html site/ore/index.html
+
+          curl -fL 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-b104-8210-a251-3dfb77af807f/raw?se=2026-09-02T09%3A30%3A04Z&sp=r&sv=2026-02-06&sr=b&scid=b967b750-6afd-58ff-80d0-0c2dfd22ca21&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T06%3A03%3A51Z&ske=2026-09-03T06%3A03%3A51Z&sks=b&skv=2026-02-06&sig=gLHpk7T0j0SiRniltuDs7LO0ycTngGdXxtpX/EMHPn4%3D' -o /tmp/android.zip
+          unzip -j /tmp/android.zip '*.apk' -d /tmp/android
+          APK_FILE=$(find /tmp/android -type f -name '*.apk' -print -quit)
+          test -n "$APK_FILE"
+          cp "$APK_FILE" site/ore/Work-Tracker-Android.apk
+
+          curl -fL 'https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-4388-820a-833a-952089e3aa35/raw?se=2026-09-02T09%3A30%3A07Z&sp=r&sv=2026-02-06&sr=b&scid=5648ae3d-c688-5b42-81a3-bc99a97dbf14&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-01T23%3A34%3A27Z&ske=2026-09-02T23%3A34%3A27Z&sks=b&skv=2026-02-06&sig=qJFw65vLEWETKmXFYf8ja83aAFv6rInEGE55OfCD8CA%3D' -o /tmp/ios.zip
+          unzip -j /tmp/ios.zip '*.ipa' -d /tmp/ios
+          IPA_FILE=$(find /tmp/ios -type f -name '*.ipa' -print -quit)
+          test -n "$IPA_FILE"
+          cp "$IPA_FILE" site/ore/Work-Tracker-iPhone-UNSIGNED.ipa
+
+          touch site/.nojekyll
+          ls -lh site/ore
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
