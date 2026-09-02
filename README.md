@@ -1,18 +1,17 @@
 # Scorta doTERRA
 
-Scarica l'ultima versione pubblica di **Scorta doTERRA** con catalogo in italiano.
+**Scorta doTERRA è ora una web app unica per Android e iPhone.**
 
-## Download
+## Apri l'app
 
-### Android
-[⬇️ Scarica Scorta doTERRA per Android](https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA.apk)
+[🌿 Apri Scorta doTERRA](https://iridea85.github.io/scorta-doterra-download/app/)
 
-APK firmato e aggiornabile sopra la versione già installata.
+Non serve scaricare APK o IPA.
 
-### iPhone / Apple
-[⬇️ Scarica Scorta doTERRA per iPhone](https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-iPhone-UNSIGNED.ipa)
+- **Android:** apri con Chrome e usa **⋮ → Installa app** oppure **Aggiungi a schermata Home**.
+- **iPhone:** apri con Safari e usa **Condividi → Aggiungi alla schermata Home**.
 
-L'IPA è compilato ma non firmato Apple: per installarlo su un iPhone reale serve firma Apple/TestFlight.
+L'inventario viene salvato localmente sul dispositivo.
 
 ---
 
