@@ -158,13 +158,18 @@ jobs:
                   return;
                 }
 
-                alert(
-                  'Per installare Scorta doTERRA su Android:\n\n' +
-                  '1. Apri questa pagina in Chrome\n' +
-                  '2. Tocca il menu ⋮\n' +
-                  '3. Tocca “Installa app”\n\n' +
-                  'Se l’opzione non compare ancora, attendi qualche secondo e riprova.'
-                );
+                const current =
+                  location.host +
+                  location.pathname +
+                  location.search +
+                  location.hash;
+
+                location.href =
+                  'intent://' + current +
+                  '#Intent;scheme=https;package=com.android.chrome;' +
+                  'S.browser_fallback_url=' +
+                  encodeURIComponent(location.href) +
+                  ';end';
               };
             }
 
