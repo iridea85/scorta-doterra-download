@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - "index.html"
+      - "chiavi-scorta/**"
       - "ore/**"
       - "work-tracker-web/**"
       - "Work-Tracker-Android.apk"
@@ -584,6 +585,7 @@ jobs:
       - name: Mantieni pagina Ore
         run: |
           set -e
+          if [ -d chiavi-scorta ]; then cp -R chiavi-scorta site/chiavi-scorta; fi
           if [ -d ore ]; then cp -R ore site/ore; fi
           if [ -d work-tracker-web ]; then cp -R work-tracker-web site/work-tracker-web; fi
           if [ -f Work-Tracker-Android.apk ]; then cp Work-Tracker-Android.apk site/Work-Tracker-Android.apk; fi
