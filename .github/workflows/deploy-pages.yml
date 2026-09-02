@@ -404,8 +404,8 @@ jobs:
             const PUBLIC_KEY = {
               kty: 'EC',
               crv: 'P-256',
-              x: 'vPtkIaOaVTxQ0hZM18wAj-RA8-h0qoI2wQigxqpRWfE',
-              y: 'w-I8Mu624RUvADnMKcaTiUZKwzt-on3iRCjSQAsvS3g',
+              x: 'Xa0H5ejudFOzEo6gqBxWOSJw6nclum_AgreusvTe1QI',
+              y: '8xc9EzI8GqOtzEqBID-Ux9mkGIyIwMG4043jHxOJbBM',
               ext: true
             };
 
