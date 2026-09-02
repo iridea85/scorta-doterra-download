@@ -34,20 +34,20 @@ jobs:
       - name: Prepara Scorta doTERRA Web App
         run: |
           set -e
-          mkdir -p site/app
+          mkdir -p site/app-v2
           cp index.html site/index.html
 
           curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip"             -o /tmp/Scorta-doTERRA-Web.zip
-          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app
-          test -s site/app/index.html
+          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v2
+          test -s site/app-v2/index.html
 
-          cat > site/app/manifest.json <<'EOF'
+          cat > site/app-v2/manifest.json <<'EOF'
           {
-            "id": "/scorta-doterra-download/app/",
+            "id": "/scorta-doterra-download/app-v2/",
             "name": "Scorta doTERRA",
             "short_name": "Scorta",
-            "start_url": "/scorta-doterra-download/app/",
-            "scope": "/scorta-doterra-download/app/",
+            "start_url": "/scorta-doterra-download/app-v2/",
+            "scope": "/scorta-doterra-download/app-v2/",
             "display": "standalone",
             "display_override": ["standalone", "minimal-ui"],
             "background_color": "#F7F5F7",
@@ -78,7 +78,7 @@ jobs:
           }
           EOF
 
-          cat > site/app/install-helper.js <<'EOF'
+          cat > site/app-v2/install-helper-v2.js <<'EOF'
           (() => {
             const standalone =
               window.matchMedia('(display-mode: standalone)').matches ||
@@ -131,8 +131,9 @@ jobs:
               installButton = null;
             };
 
+            const button = ensureButton();
+
             if (isIOS) {
-              const button = ensureButton();
               button.addEventListener('click', () => {
                 alert(
                   'Per installare Scorta doTERRA su iPhone:\\n\\n' +
@@ -144,11 +145,33 @@ jobs:
               });
             }
 
+            if (!isIOS) {
+              button.onclick = () => {
+                if (deferredPrompt) {
+                  button.disabled = true;
+                  deferredPrompt.prompt().then(() => deferredPrompt.userChoice).then(() => {
+                    deferredPrompt = null;
+                    removeButton();
+                  }).catch(() => {
+                    button.disabled = false;
+                  });
+                  return;
+                }
+
+                alert(
+                  'Per installare Scorta doTERRA su Android:\n\n' +
+                  '1. Apri questa pagina in Chrome\n' +
+                  '2. Tocca il menu ⋮\n' +
+                  '3. Tocca “Installa app”\n\n' +
+                  'Se l’opzione non compare ancora, attendi qualche secondo e riprova.'
+                );
+              };
+            }
+
             window.addEventListener('beforeinstallprompt', (event) => {
               event.preventDefault();
               deferredPrompt = event;
 
-              const button = ensureButton();
               button.onclick = async () => {
                 if (!deferredPrompt) return;
                 button.disabled = true;
@@ -165,11 +188,11 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("site/app/index.html")
+          p = Path("site/app-v2/index.html")
           s = p.read_text(encoding="utf-8")
           marker = '<script src="flutter_bootstrap.js" async></script>'
-          if '<script src="install-helper.js"></script>' not in s:
-              s = s.replace(marker, '<script src="install-helper.js"></script>\n  ' + marker)
+          if '<script src="install-helper-v2.js"></script>' not in s:
+              s = s.replace(marker, '<script src="install-helper-v2.js"></script>\n  ' + marker)
           p.write_text(s, encoding="utf-8")
           PY
 
