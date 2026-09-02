@@ -41,6 +41,112 @@ jobs:
           unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app
           test -s site/app/index.html
 
+          cat > site/app/manifest.json <<'EOF'
+          {
+            "id": "/scorta-doterra-download/app/",
+            "name": "Scorta doTERRA",
+            "short_name": "Scorta",
+            "start_url": "/scorta-doterra-download/app/",
+            "scope": "/scorta-doterra-download/app/",
+            "display": "standalone",
+            "display_override": ["standalone", "minimal-ui"],
+            "background_color": "#F7F5F7",
+            "theme_color": "#6E5578",
+            "description": "Inventario personale doTERRA con catalogo in italiano e lista della spesa.",
+            "orientation": "portrait-primary",
+            "prefer_related_applications": false,
+            "icons": [
+              {
+                "src": "icons/Icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "icons/Icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "icons/Icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable"
+              }
+            ]
+          }
+          EOF
+
+          cat > site/app/install-helper.js <<'EOF'
+          (() => {
+            const standalone =
+              window.matchMedia('(display-mode: standalone)').matches ||
+              window.navigator.standalone === true;
+            if (standalone) return;
+
+            let deferredPrompt = null;
+            let installButton = null;
+
+            const removeButton = () => {
+              if (installButton) installButton.remove();
+              installButton = null;
+            };
+
+            window.addEventListener('beforeinstallprompt', (event) => {
+              event.preventDefault();
+              deferredPrompt = event;
+              if (installButton) return;
+
+              installButton = document.createElement('button');
+              installButton.type = 'button';
+              installButton.textContent = 'Installa Scorta doTERRA';
+              installButton.setAttribute('aria-label', 'Installa Scorta doTERRA');
+
+              Object.assign(installButton.style, {
+                position: 'fixed',
+                left: '50%',
+                bottom: 'calc(18px + env(safe-area-inset-bottom))',
+                transform: 'translateX(-50%)',
+                zIndex: '99999',
+                border: '0',
+                borderRadius: '18px',
+                padding: '15px 22px',
+                background: '#6E5578',
+                color: '#FFFFFF',
+                fontSize: '16px',
+                fontWeight: '800',
+                boxShadow: '0 12px 30px rgba(50,34,56,.28)',
+                maxWidth: 'calc(100vw - 32px)',
+                whiteSpace: 'nowrap'
+              });
+
+              installButton.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                installButton.disabled = true;
+                await deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                removeButton();
+              });
+
+              document.body.appendChild(installButton);
+            });
+
+            window.addEventListener('appinstalled', removeButton);
+          })();
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("site/app/index.html")
+          s = p.read_text(encoding="utf-8")
+          marker = '<script src="flutter_bootstrap.js" async></script>'
+          if '<script src="install-helper.js"></script>' not in s:
+              s = s.replace(marker, '<script src="install-helper.js"></script>\n  ' + marker)
+          p.write_text(s, encoding="utf-8")
+          PY
+
       - name: Mantieni pagina Ore
         run: |
           set -e
