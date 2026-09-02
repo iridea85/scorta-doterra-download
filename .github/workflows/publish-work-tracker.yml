@@ -1,0 +1,46 @@
+name: Publish Work Tracker release
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/publish-work-tracker.yml"
+      - "ore/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download stable Work Tracker builds
+        run: |
+          set -e
+          mkdir -p /tmp/android /tmp/ios dist
+          curl -fL 'https://sdmntpreastus2.oaiusercontent.com/files/00000000-ca94-81f6-b003-8b53f495a00c/raw?se=2026-09-02T09%3A33%3A44Z&sp=r&sv=2026-02-06&sr=b&scid=a39fb455-4e59-5894-b0d8-09682aa5086b&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-01T23%3A34%3A30Z&ske=2026-09-02T23%3A34%3A30Z&sks=b&skv=2026-02-06&sig=7cIhENMdVdzWedhK0XP6GWIy/MqAJiJSIr/uMjt4CZs%3D' -o /tmp/android.zip
+          curl -fL 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-36a4-8210-b2d7-1736e7d09955/raw?se=2026-09-02T09%3A33%3A47Z&sp=r&sv=2026-02-06&sr=b&scid=3952ee4b-42d6-5166-82c0-513642d11c93&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-01T23%3A26%3A35Z&ske=2026-09-02T23%3A26%3A35Z&sks=b&skv=2026-02-06&sig=z10stME%2BlKZ3DetEEscW2ZsFSpn00/y2jxSkINJ/KU0%3D' -o /tmp/ios.zip
+
+          unzip -j /tmp/android.zip '*.apk' -d /tmp/android
+          unzip -j /tmp/ios.zip '*.ipa' -d /tmp/ios
+
+          APK_FILE=$(find /tmp/android -type f -name '*.apk' -print -quit)
+          IPA_FILE=$(find /tmp/ios -type f -name '*.ipa' -print -quit)
+          test -n "$APK_FILE"
+          test -n "$IPA_FILE"
+
+          cp "$APK_FILE" dist/Work-Tracker-Android.apk
+          cp "$IPA_FILE" dist/Work-Tracker-iPhone-UNSIGNED.ipa
+          test -s dist/Work-Tracker-Android.apk
+          test -s dist/Work-Tracker-iPhone-UNSIGNED.ipa
+
+      - name: Publish public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete work-tracker-v49 --yes --cleanup-tag || true
+          gh release create work-tracker-v49             dist/Work-Tracker-Android.apk             dist/Work-Tracker-iPhone-UNSIGNED.ipa             --title "Work Tracker - Android e iPhone"             --notes "Android: APK firmato Build #49, installabile come aggiornamento. iPhone: IPA compilato Build iOS #3, non ancora firmato Apple." 
