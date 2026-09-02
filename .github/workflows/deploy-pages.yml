@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -31,6 +31,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Aggiorna pacchetto web Scorta
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          curl -fL "https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-cf0c-8210-9801-43066726776f/raw?se=2026-09-02T19%3A31%3A43Z&sp=r&sv=2026-02-06&sr=b&scid=6fd0432a-16ee-5da3-9f85-0cd9e490a046&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-02T04%3A16%3A44Z&ske=2026-09-03T04%3A16%3A44Z&sks=b&skv=2026-02-06&sig=b/AzPoyVevGCDyURBx3d7JCD4mH1mvT3CNUp4Ur5f00%3D" -o /tmp/Scorta-doTERRA-Web.zip
+          gh release upload v1.0.11-it /tmp/Scorta-doTERRA-Web.zip --clobber --repo iridea85/scorta-doterra-download
 
 
       - name: Prepara Scorta doTERRA Web App
