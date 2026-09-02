@@ -3,53 +3,354 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#355C66">
-  <meta name="description" content="Scarica Work Tracker per Android e iPhone.">
-  <title>Scarica Work Tracker</title>
+  <meta name="theme-color" content="#294f5a">
+  <meta name="description" content="Scarica Work Tracker per Android o apri la Web App su iPhone.">
+  <title>Work Tracker</title>
   <style>
-    :root{--bg:#f5f7f8;--card:#fff;--ink:#24343a;--muted:#6f7a7e;--brand:#355c66;--brand2:#294850;--soft:#e8f0f2;--ok:#4f8062;--oksoft:#e9f2ec;--line:#e2e8ea;--shadow:0 18px 50px rgba(42,71,79,.12)}
-    *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
-    body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(circle at 10% 0%,#e3ecef 0,transparent 34rem),linear-gradient(180deg,#fbfcfc 0%,var(--bg) 100%);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-    .wrap{width:min(780px,calc(100% - 28px));margin:auto;padding:36px 0 48px}.hero{text-align:center;padding:12px 10px 26px}
-    .mark{width:86px;height:86px;display:grid;place-items:center;margin:0 auto 18px;border-radius:27px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
-    .clock{width:45px;height:45px;border:4px solid var(--brand);border-radius:50%;position:relative}.clock:before,.clock:after{content:"";position:absolute;left:50%;top:50%;width:4px;border-radius:99px;background:var(--brand);transform-origin:50% 100%}.clock:before{height:14px;transform:translate(-50%,-100%)}.clock:after{height:12px;transform:translate(-50%,-100%) rotate(120deg)}
-    h1{margin:0;font-size:clamp(36px,8vw,54px);line-height:1.02;letter-spacing:-1.8px}.subtitle{margin:13px auto 0;max-width:620px;color:var(--muted);font-size:17px;line-height:1.55}
-    .status{display:inline-flex;align-items:center;gap:7px;margin-top:17px;padding:7px 12px;border-radius:999px;background:var(--oksoft);color:var(--ok);font-size:13px;font-weight:800}.status:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
-    .downloads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:23px;box-shadow:0 12px 38px rgba(42,71,79,.08)}
-    .platform{display:flex;gap:14px;align-items:center;margin-bottom:18px}.icon{width:50px;height:50px;flex:0 0 50px;border-radius:16px;display:grid;place-items:center;background:var(--soft);color:var(--brand);font-size:25px;font-weight:900}
-    .platform h2{margin:0;font-size:22px;letter-spacing:-.4px}.platform p{margin:4px 0 0;color:var(--muted);font-size:13px}
-    .btn{display:flex;width:100%;min-height:56px;align-items:center;justify-content:center;gap:9px;text-decoration:none;border-radius:16px;padding:13px 16px;background:var(--brand);color:#fff;font-weight:900;font-size:15px;transition:.12s ease}.btn:hover{background:var(--brand2)}.btn:active{transform:scale(.985)}.btn.apple{background:#24282b}
-    .note{margin:13px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.detected{outline:3px solid rgba(53,92,102,.18);position:relative}.detected:before{content:"Questo è il tuo dispositivo";position:absolute;top:-11px;left:20px;padding:4px 9px;background:var(--brand);color:white;font-size:10px;border-radius:999px;font-weight:900}
-    .info{margin-top:18px;background:rgba(255,255,255,.76);border:1px solid var(--line);border-radius:22px;padding:18px;color:var(--muted);font-size:13px;line-height:1.6}.info strong{color:var(--ink)}.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.chip{padding:6px 9px;border-radius:999px;background:var(--soft);color:var(--brand);font-size:11px;font-weight:800}
-    footer{text-align:center;color:#929da0;font-size:11px;line-height:1.5;margin-top:24px;padding:0 18px}@media(max-width:650px){.wrap{width:min(100% - 22px,780px);padding-top:22px}.downloads{grid-template-columns:1fr}.card{padding:20px}.hero{padding-bottom:18px}}
+    :root{
+      --bg1:#edf4f5;
+      --bg2:#f8fafb;
+      --ink:#183038;
+      --muted:#6d7c81;
+      --brand:#355c66;
+      --brand2:#274b55;
+      --line:rgba(53,92,102,.12);
+      --shadow:0 24px 70px rgba(26,59,68,.14);
+      --shadow-soft:0 12px 30px rgba(26,59,68,.09);
+    }
+
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(100,151,163,.22), transparent 28rem),
+        radial-gradient(circle at 100% 20%, rgba(148,186,194,.18), transparent 24rem),
+        linear-gradient(180deg,var(--bg2),var(--bg1));
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    }
+
+    .page{
+      width:min(760px,calc(100% - 28px));
+      margin:0 auto;
+      padding:34px 0 48px;
+    }
+
+    .hero{
+      text-align:center;
+      padding:8px 12px 28px;
+    }
+
+    .app-icon{
+      width:96px;
+      height:96px;
+      margin:0 auto 20px;
+      border-radius:30px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(145deg,#416f7a,#284d56);
+      box-shadow:0 22px 45px rgba(40,77,86,.25);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .app-icon:after{
+      content:"";
+      position:absolute;
+      inset:1px;
+      border-radius:29px;
+      border:1px solid rgba(255,255,255,.25);
+      pointer-events:none;
+    }
+
+    .clock{
+      width:49px;
+      height:49px;
+      border:4px solid #fff;
+      border-radius:50%;
+      position:relative;
+    }
+
+    .clock:before,.clock:after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:4px;
+      border-radius:99px;
+      background:#fff;
+      transform-origin:50% 100%;
+    }
+
+    .clock:before{
+      height:15px;
+      transform:translate(-50%,-100%);
+    }
+
+    .clock:after{
+      height:13px;
+      transform:translate(-50%,-100%) rotate(125deg);
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(38px,9vw,58px);
+      letter-spacing:-2px;
+      line-height:1;
+      font-weight:900;
+    }
+
+    .subtitle{
+      margin:14px auto 0;
+      max-width:540px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.55;
+    }
+
+    .choice-title{
+      margin:2px 0 15px;
+      text-align:center;
+      font-size:14px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#668087;
+    }
+
+    .downloads{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+    }
+
+    .platform-card{
+      background:rgba(255,255,255,.88);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      border:1px solid rgba(255,255,255,.8);
+      border-radius:30px;
+      padding:24px;
+      box-shadow:var(--shadow-soft);
+      position:relative;
+      transition:transform .16s ease,box-shadow .16s ease;
+    }
+
+    .platform-card:hover{
+      transform:translateY(-2px);
+      box-shadow:var(--shadow);
+    }
+
+    .platform-top{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:19px;
+    }
+
+    .platform-icon{
+      width:58px;
+      height:58px;
+      flex:0 0 58px;
+      border-radius:19px;
+      display:grid;
+      place-items:center;
+      font-size:29px;
+      font-weight:900;
+      background:#edf4f5;
+      color:var(--brand);
+    }
+
+    .platform-card.apple .platform-icon{
+      background:#f0f0f1;
+      color:#181a1c;
+      font-size:31px;
+    }
+
+    .platform-name{
+      margin:0;
+      font-size:23px;
+      font-weight:900;
+      letter-spacing:-.5px;
+    }
+
+    .platform-meta{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
+
+    .action{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:58px;
+      width:100%;
+      border-radius:18px;
+      text-decoration:none;
+      color:#fff;
+      background:linear-gradient(135deg,var(--brand),var(--brand2));
+      font-weight:900;
+      font-size:16px;
+      letter-spacing:-.15px;
+      box-shadow:0 10px 22px rgba(53,92,102,.2);
+      transition:transform .12s ease,filter .12s ease;
+    }
+
+    .action:active{transform:scale(.985)}
+    .action:hover{filter:brightness(.98)}
+
+    .apple .action{
+      background:linear-gradient(135deg,#25282b,#111315);
+      box-shadow:0 10px 22px rgba(17,19,21,.16);
+    }
+
+    .hint{
+      margin:13px 2px 0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .detected{
+      outline:3px solid rgba(53,92,102,.18);
+    }
+
+    .detected:before{
+      content:"Consigliato per questo dispositivo";
+      position:absolute;
+      top:-11px;
+      left:22px;
+      padding:5px 10px;
+      border-radius:999px;
+      background:var(--brand);
+      color:#fff;
+      font-size:10px;
+      font-weight:900;
+      box-shadow:0 5px 14px rgba(53,92,102,.2);
+    }
+
+    .mini{
+      margin-top:18px;
+      padding:16px 18px;
+      border-radius:22px;
+      background:rgba(255,255,255,.56);
+      border:1px solid var(--line);
+      color:#718087;
+      font-size:12px;
+      line-height:1.55;
+      text-align:center;
+    }
+
+    .mini strong{color:var(--ink)}
+
+    footer{
+      text-align:center;
+      color:#96a2a6;
+      font-size:11px;
+      margin-top:22px;
+    }
+
+    @media(max-width:650px){
+      .page{width:min(100% - 20px,760px);padding-top:24px}
+      .hero{padding-bottom:22px}
+      .downloads{grid-template-columns:1fr}
+      .platform-card{padding:21px}
+      .app-icon{width:88px;height:88px;border-radius:27px}
+      h1{font-size:42px}
+    }
   </style>
 </head>
 <body>
-<main class="wrap">
-  <section class="hero"><div class="mark" aria-hidden="true"><div class="clock"></div></div><h1>Work Tracker</h1><p class="subtitle">Scarica l'app per registrare entrate e uscite, controllare ore e straordinari, gestire ferie e assenze e consultare tutto dal calendario.</p><div class="status">Versione disponibile</div></section>
-  <section class="downloads">
-    <article class="card" id="android-card"><div class="platform"><div class="icon">A</div><div><h2>Android</h2><p>APK firmato • Build #65</p></div></div><a class="btn" id="android-download" href="https://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk">↓ Scarica per Android</a><p class="note">Puoi installarla sopra la versione già presente: non serve disinstallare l'app e i dati restano sul dispositivo.</p></article>
-    <article class="card" id="ios-card"><div class="platform"><div class="icon"></div><div><h2>iPhone / Apple</h2><p>Web app • nessuna firma Apple</p></div></div><a class="btn apple" href="https://raw.githack.com/iridea85/scorta-doterra-download/main/work-tracker-web/index.html">Apri Web App su iPhone</a><p class="note">Aprila con Safari e usa Condividi → Aggiungi alla schermata Home. La versione web non può usare il geofencing e le notifiche native in background come l’app Android.</p></article>
-  </section>
-  <section class="info"><strong>Un'unica app per la tua giornata lavorativa.</strong> Calendario mensile ed elenco, inserimento manuale, geofencing, notifiche, statistiche, backup e gestione delle assenze anche prima o dopo la giornata.<div class="chips"><span class="chip">Calendario</span><span class="chip">Ferie e assenze</span><span class="chip">Straordinari</span><span class="chip">Geofencing</span><span class="chip">Backup</span></div></section>
-  <footer>Work Tracker • Android + Web App iPhone</footer>
-</main>
-<script>
-(function(){
-  var ua=navigator.userAgent||"";
-  var android=/Android/i.test(ua);
-  var ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-  if(android)document.getElementById("android-card").classList.add("detected");
-  if(ios)document.getElementById("ios-card").classList.add("detected");
+  <main class="page">
+    <section class="hero">
+      <div class="app-icon" aria-hidden="true">
+        <div class="clock"></div>
+      </div>
+      <h1>Work Tracker</h1>
+      <p class="subtitle">
+        Scegli il tuo dispositivo e apri subito la versione giusta dell'app.
+      </p>
+    </section>
 
-  var androidLink=document.getElementById("android-download");
-  if(android && androidLink){
-    androidLink.addEventListener("click",function(e){
-      e.preventDefault();
-      window.location.href="intent://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fgithub.com%2Firidea85%2Fscorta-doterra-download%2Freleases%2Fdownload%2Fwork-tracker-v65%2FWork-Tracker-Android.apk;end";
-    });
-  }
-})();
-</script>
+    <div class="choice-title">Scegli il tuo dispositivo</div>
+
+    <section class="downloads">
+      <article class="platform-card" id="android-card">
+        <div class="platform-top">
+          <div class="platform-icon" aria-hidden="true">A</div>
+          <div>
+            <h2 class="platform-name">Android</h2>
+            <p class="platform-meta">APK firmato • Build #65</p>
+          </div>
+        </div>
+
+        <a
+          class="action"
+          id="android-download"
+          href="https://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk"
+        >
+          Scarica l'app Android
+        </a>
+
+        <p class="hint">
+          Si installa sopra la versione già presente senza cancellare i tuoi dati.
+        </p>
+      </article>
+
+      <article class="platform-card apple" id="ios-card">
+        <div class="platform-top">
+          <div class="platform-icon" aria-hidden="true"></div>
+          <div>
+            <h2 class="platform-name">iPhone</h2>
+            <p class="platform-meta">Web App • nessuna firma Apple</p>
+          </div>
+        </div>
+
+        <a
+          class="action"
+          href="https://raw.githack.com/iridea85/scorta-doterra-download/main/work-tracker-web/index.html"
+        >
+          Apri la Web App
+        </a>
+
+        <p class="hint">
+          Aprila con Safari, poi tocca Condividi → Aggiungi alla schermata Home.
+        </p>
+      </article>
+    </section>
+
+    <div class="mini">
+      <strong>Work Tracker</strong> gestisce ore, calendario, straordinari, ferie e assenze.
+      Su iPhone la versione Web App non usa geofencing e notifiche native in background.
+    </div>
+
+    <footer>Work Tracker • Android + Web App iPhone</footer>
+  </main>
+
+  <script>
+    (function(){
+      var ua=navigator.userAgent||"";
+      var android=/Android/i.test(ua);
+      var ios=/iPhone|iPad|iPod/i.test(ua)||
+        (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+
+      if(android)document.getElementById("android-card").classList.add("detected");
+      if(ios)document.getElementById("ios-card").classList.add("detected");
+
+      var androidLink=document.getElementById("android-download");
+      if(android&&androidLink){
+        androidLink.addEventListener("click",function(e){
+          e.preventDefault();
+          window.location.href=
+            "intent://github.com/iridea85/scorta-doterra-download/releases/download/work-tracker-v65/Work-Tracker-Android.apk#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=https%3A%2F%2Fgithub.com%2Firidea85%2Fscorta-doterra-download%2Freleases%2Fdownload%2Fwork-tracker-v65%2FWork-Tracker-Android.apk;end";
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
