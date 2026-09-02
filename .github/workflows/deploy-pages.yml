@@ -34,20 +34,20 @@ jobs:
       - name: Prepara Scorta doTERRA Web App
         run: |
           set -e
-          mkdir -p site/app-v4
+          mkdir -p site/app-v5
           cp index.html site/index.html
 
           curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip"             -o /tmp/Scorta-doTERRA-Web.zip
-          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v4
-          test -s site/app-v4/index.html
+          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v5
+          test -s site/app-v5/index.html
 
-          cat > site/app-v4/manifest.json <<'EOF'
+          cat > site/app-v5/manifest.json <<'EOF'
           {
-            "id": "/scorta-doterra-download/app-v4/",
+            "id": "/scorta-doterra-download/app-v5/",
             "name": "Scorta doTERRA",
             "short_name": "Scorta",
-            "start_url": "/scorta-doterra-download/app-v4/",
-            "scope": "/scorta-doterra-download/app-v4/",
+            "start_url": "/scorta-doterra-download/app-v5/",
+            "scope": "/scorta-doterra-download/app-v5/",
             "display": "standalone",
             "display_override": ["standalone", "minimal-ui"],
             "background_color": "#F7F5F7",
@@ -78,7 +78,7 @@ jobs:
           }
           EOF
 
-          cat > site/app-v4/install-helper-v4.js <<'EOF'
+          cat > site/app-v5/install-helper-v5.js <<'EOF'
           (() => {
             const standalone =
               window.matchMedia('(display-mode: standalone)').matches ||
@@ -91,6 +91,8 @@ jobs:
               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
             let deferredPrompt = null;
+            let pendingClick = false;
+            let pendingTimer = null;
 
             const button = document.createElement('button');
             button.type = 'button';
@@ -106,81 +108,108 @@ jobs:
               border: '1px solid rgba(110,85,120,.18)',
               borderRadius: '14px',
               padding: '9px 12px',
-              background: '#FFFFFF',
-              color: '#6E5578',
+              background: '#6E5578',
+              color: '#FFFFFF',
               fontSize: '14px',
               fontWeight: '800',
               lineHeight: '1',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 6px 18px rgba(50,34,56,.12)',
+              boxShadow: '0 6px 18px rgba(50,34,56,.18)',
               WebkitTapHighlightColor: 'transparent'
             });
 
+            const resetButton = () => {
+              button.disabled = false;
+              button.style.opacity = '1';
+              button.innerHTML =
+                '<span style="font-size:18px;line-height:1">⇩</span><span>Installa</span>';
+            };
+
             const removeButton = () => button.remove();
 
+            const runPrompt = async () => {
+              if (!deferredPrompt) return false;
+
+              const promptEvent = deferredPrompt;
+              deferredPrompt = null;
+              pendingClick = false;
+              if (pendingTimer) clearTimeout(pendingTimer);
+
+              button.disabled = true;
+              button.innerHTML =
+                '<span style="font-size:18px;line-height:1">⇩</span><span>Apertura…</span>';
+
+              try {
+                await promptEvent.prompt();
+                const choice = await promptEvent.userChoice;
+                if (!choice || choice.outcome === 'dismissed') {
+                  resetButton();
+                }
+                return true;
+              } catch (_) {
+                resetButton();
+                return false;
+              }
+            };
+
+            document.body.appendChild(button);
+
             if (isIOS) {
-              document.body.appendChild(button);
               button.onclick = () => {
                 alert(
-                  'Per installare Scorta doTERRA su iPhone:\\n\\n' +
-                  '1. Apri questa pagina in Safari\\n' +
-                  '2. Tocca Condividi\\n' +
-                  '3. Tocca “Aggiungi alla schermata Home”\\n' +
-                  '4. Tocca Aggiungi'
+                  'Per installare Scorta doTERRA su iPhone:\n\n' +
+                  'Safari → Condividi → Aggiungi alla schermata Home → Aggiungi'
                 );
               };
               return;
             }
 
-            button.disabled = true;
-            button.style.opacity = '0.55';
-            button.style.cursor = 'wait';
-            document.body.appendChild(button);
-
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.register(
-                'flutter_service_worker.js?v=scorta-pwa-v5',
+                'flutter_service_worker.js?v=scorta-pwa-v6',
                 { scope: './' }
               ).then(() => navigator.serviceWorker.ready)
                .then(() => {
                  if (
                    !navigator.serviceWorker.controller &&
-                   sessionStorage.getItem('scorta-sw-reload-v5') !== '1'
+                   sessionStorage.getItem('scorta-sw-reload-v6') !== '1'
                  ) {
-                   sessionStorage.setItem('scorta-sw-reload-v5', '1');
+                   sessionStorage.setItem('scorta-sw-reload-v6', '1');
                    location.reload();
                  }
                })
                .catch(() => {});
             }
 
-            window.addEventListener('beforeinstallprompt', (event) => {
+            button.onclick = async () => {
+              if (deferredPrompt) {
+                await runPrompt();
+                return;
+              }
+
+              pendingClick = true;
+              button.disabled = true;
+              button.style.opacity = '0.78';
+              button.innerHTML =
+                '<span style="font-size:18px;line-height:1">⇩</span><span>Preparazione…</span>';
+
+              pendingTimer = setTimeout(() => {
+                pendingClick = false;
+                resetButton();
+              }, 4500);
+            };
+
+            window.addEventListener('beforeinstallprompt', async (event) => {
               event.preventDefault();
               deferredPrompt = event;
-              button.disabled = false;
-              button.style.opacity = '1';
-              button.style.cursor = 'pointer';
 
-              button.onclick = async () => {
-                if (!deferredPrompt) return;
-                button.disabled = true;
-                const promptEvent = deferredPrompt;
-                deferredPrompt = null;
-
-                try {
-                  await promptEvent.prompt();
-                  const choice = await promptEvent.userChoice;
-                  if (choice && choice.outcome === 'dismissed') {
-                    button.disabled = false;
-                    button.style.opacity = '1';
-                  }
-                } catch (_) {
-                  button.disabled = false;
-                  button.style.opacity = '1';
-                }
-              };
+              if (pendingClick) {
+                await runPrompt();
+              } else {
+                resetButton();
+              }
             });
 
             window.addEventListener('appinstalled', removeButton);
@@ -189,20 +218,20 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("site/app-v4/index.html")
+          p = Path("site/app-v5/index.html")
           s = p.read_text(encoding="utf-8")
           s = s.replace(
               '<base href="/scorta-doterra-download/app/">',
-              '<base href="/scorta-doterra-download/app-v4/">'
+              '<base href="/scorta-doterra-download/app-v5/">'
           )
           marker = '<script src="flutter_bootstrap.js" async></script>'
-          if '<script src="install-helper-v4.js"></script>' not in s:
-              s = s.replace(marker, '<script src="install-helper-v4.js"></script>\n  ' + marker)
+          if '<script src="install-helper-v5.js"></script>' not in s:
+              s = s.replace(marker, '<script src="install-helper-v5.js"></script>\n  ' + marker)
           p.write_text(s, encoding="utf-8")
           PY
 
-          cat > site/app-v4/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME = 'scorta-doterra-pwa-v5';
+          cat > site/app-v5/flutter_service_worker.js <<'EOF'
+          const CACHE_NAME = 'scorta-doterra-pwa-v6';
 
           self.addEventListener('install', (event) => {
             event.waitUntil(
@@ -257,11 +286,11 @@ jobs:
           from pathlib import Path
           import re
 
-          p = Path("site/app-v4/flutter_bootstrap.js")
+          p = Path("site/app-v5/flutter_bootstrap.js")
           s = p.read_text(encoding="utf-8")
           s, n = re.subn(
               r'serviceWorkerVersion:\s*"[^"]+"',
-              'serviceWorkerVersion: "scorta-pwa-v5"',
+              'serviceWorkerVersion: "scorta-pwa-v6"',
               s,
               count=1
           )
@@ -270,9 +299,9 @@ jobs:
           p.write_text(s, encoding="utf-8")
           PY
 
-          test -s site/app-v4/flutter_service_worker.js
-          grep -q "self.clients.claim" site/app-v4/flutter_service_worker.js
-          grep -q 'serviceWorkerVersion: "scorta-pwa-v5"' site/app-v4/flutter_bootstrap.js
+          test -s site/app-v5/flutter_service_worker.js
+          grep -q "self.clients.claim" site/app-v5/flutter_service_worker.js
+          grep -q 'serviceWorkerVersion: "scorta-pwa-v6"' site/app-v5/flutter_bootstrap.js
 
       - name: Mantieni pagina Ore
         run: |
