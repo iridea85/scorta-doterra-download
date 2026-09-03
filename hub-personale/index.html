@@ -10,29 +10,109 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <title>Le mie App</title>
 <style>
-:root{--bg:#f5f5f7;--card:#fff;--text:#17171a;--muted:#72727a;--line:#e7e7eb;--dark:#17171a;--red:#b42318;--red2:#d92d20}
+:root{
+  --bg:#f6f3f8;
+  --card:#ffffff;
+  --text:#19171d;
+  --muted:#77727c;
+  --line:#ebe6ee;
+  --android1:#121821;
+  --android2:#274158;
+  --ios1:#ffffff;
+  --ios2:#eee8f3;
+  --iosText:#2d2831;
+  --berry1:#8f2f5f;
+  --berry2:#d94b7b;
+}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(183,150,198,.18),transparent 30rem),
+    radial-gradient(circle at 100% 18%,rgba(220,175,193,.16),transparent 24rem),
+    linear-gradient(180deg,#fcfafc 0%,var(--bg) 100%);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif
+}
 main{width:min(620px,calc(100% - 28px));margin:auto;padding:max(24px,env(safe-area-inset-top)) 0 max(34px,env(safe-area-inset-bottom))}
 header{padding:8px 4px 20px}
 h1{margin:0;font-size:34px;letter-spacing:-1.2px}
 header p{margin:7px 0 0;color:var(--muted);font-size:15px}
 .grid{display:grid;gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:0 6px 24px rgba(0,0,0,.04)}
-.card-main{display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit;border-radius:16px;padding:2px}
+.card{
+  background:rgba(255,255,255,.94);
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:18px;
+  box-shadow:0 12px 34px rgba(50,35,58,.07);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px)
+}
+.card-main{display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit;border-radius:18px;padding:4px}
 .card-main:active{transform:scale(.99)}
-.icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#f0f0f3;font-size:24px;flex:none}
+.icon{
+  width:52px;
+  height:52px;
+  border-radius:17px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,#faf9fb,#ece7f0);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 16px rgba(96,74,106,.08);
+  font-size:25px;
+  flex:none
+}
 .name{font-weight:800;font-size:18px}
 .note{margin-top:2px;color:var(--muted);font-size:13px}
-.openhint{margin-left:auto;color:#9a9aa1;font-size:22px;font-weight:700}
+
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
 button.btn{border:0;appearance:none;-webkit-appearance:none;cursor:pointer}
-.btn{min-height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:14px;padding:10px 12px}
-.btn.android{background:var(--dark);color:#fff}
-.btn.iphone{background:#efeff2;color:var(--text)}
-.copy-page{grid-column:1/-1;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff}
+.btn{
+  min-height:50px;
+  border-radius:17px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-weight:850;
+  font-size:14px;
+  letter-spacing:-.1px;
+  padding:11px 13px;
+  transition:transform .15s ease,filter .15s ease,box-shadow .15s ease
+}
+.btn:active{transform:scale(.985)}
+.btn.android{
+  color:#fff;
+  background:linear-gradient(135deg,var(--android1),var(--android2));
+  box-shadow:0 10px 24px rgba(23,36,49,.22)
+}
+.btn.iphone{
+  color:var(--iosText);
+  background:linear-gradient(135deg,var(--ios1),var(--ios2));
+  border:1px solid #e4ddea;
+  box-shadow:0 8px 20px rgba(112,87,124,.10)
+}
+.copy-page{
+  grid-column:1/-1;
+  color:#fff;
+  background:linear-gradient(135deg,var(--berry1),var(--berry2));
+  box-shadow:0 12px 28px rgba(172,57,105,.23)
+}
 .copy-page small{display:block;font-weight:600;opacity:.9;margin-left:6px}
+.btn:hover{filter:brightness(.985)}
+.openhint{
+  margin-left:auto;
+  color:#a79eaa;
+  font-size:24px;
+  font-weight:700;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#f5f1f6
+}
 footer{padding:20px 5px 0;color:#9a9aa1;text-align:center;font-size:11px;line-height:1.45}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#17171a;color:#fff;padding:11px 16px;border-radius:999px;font-size:13px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;z-index:999}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
