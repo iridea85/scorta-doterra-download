@@ -10,7 +10,7 @@
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <title>Le mie App</title>
 <style>
-:root{--bg:#f5f5f7;--card:#fff;--text:#17171a;--muted:#72727a;--line:#e7e7eb;--dark:#17171a}
+:root{--bg:#f5f5f7;--card:#fff;--text:#17171a;--muted:#72727a;--line:#e7e7eb;--dark:#17171a;--red:#b42318;--red2:#d92d20}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
@@ -20,79 +20,111 @@ h1{margin:0;font-size:34px;letter-spacing:-1.2px}
 header p{margin:7px 0 0;color:var(--muted);font-size:15px}
 .grid{display:grid;gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:0 6px 24px rgba(0,0,0,.04)}
-.top{display:flex;align-items:center;gap:13px}
+.card-main{display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit;border-radius:16px;padding:2px}
+.card-main:active{transform:scale(.99)}
 .icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#f0f0f3;font-size:24px;flex:none}
 .name{font-weight:800;font-size:18px}
 .note{margin-top:2px;color:var(--muted);font-size:13px}
+.openhint{margin-left:auto;color:#9a9aa1;font-size:22px;font-weight:700}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
-a.btn,.off{min-height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:14px;text-decoration:none;padding:10px 12px}
-a.btn{background:var(--dark);color:#fff}
-a.btn.secondary{background:#efeff2;color:var(--text)}
-.off{grid-column:1/-1;background:#f0f0f2;color:#9a9aa1}
+button.btn{border:0;appearance:none;-webkit-appearance:none;cursor:pointer}
+.btn{min-height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:14px;padding:10px 12px}
+.btn.android{background:var(--dark);color:#fff}
+.btn.iphone{background:#efeff2;color:var(--text)}
+.copy-page{grid-column:1/-1;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff}
+.copy-page small{display:block;font-weight:600;opacity:.9;margin-left:6px}
 footer{padding:20px 5px 0;color:#9a9aa1;text-align:center;font-size:11px;line-height:1.45}
-@media(max-width:420px){.actions{grid-template-columns:1fr}.actions .off{grid-column:auto}}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#17171a;color:#fff;padding:11px 16px;border-radius:999px;font-size:13px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:420px){.actions{grid-template-columns:1fr}.copy-page{grid-column:auto}}
 </style>
 </head>
 <body>
 <main>
 <header>
   <h1>Le mie App</h1>
-  <p>Tutto in un unico posto.</p>
+  <p>Tocca il riquadro grande per aprire la pagina completa. I pulsanti copiano i link.</p>
 </header>
 
 <section class="grid">
+
   <article class="card">
-    <div class="top">
+    <a class="card-main" href="./rw.html">
       <div class="icon">◢</div>
       <div><div class="name">RW Soluzioni</div><div class="note">Reverse Wind</div></div>
-    </div>
+      <div class="openhint">›</div>
+    </a>
     <div class="actions">
-      <a class="btn" href="https://rw-hub.it/" target="_blank" rel="noopener">Android</a>
-      <a class="btn secondary" href="https://rw-hub.it/" target="_blank" rel="noopener">iPhone</a>
+      <button class="btn android copy-link" data-copy="https://rw-hub.it/">Copia Android</button>
+      <button class="btn iphone copy-link" data-copy="https://rw-hub.it/">Copia iPhone</button>
+      <button class="btn copy-page copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/hub-personale/rw.html">Copia pagina completa</button>
     </div>
   </article>
 
   <article class="card">
-    <div class="top">
+    <a class="card-main" href="https://iridea85.github.io/scorta-doterra-download/install/">
       <div class="icon">🌿</div>
       <div><div class="name">Scorta doTERRA</div><div class="note">Inventario e lista della spesa</div></div>
-    </div>
+      <div class="openhint">›</div>
+    </a>
     <div class="actions">
-      <a class="btn" href="https://iridea85.github.io/scorta-doterra-download/app-v6/?platform=android&amp;chrome=1" target="_blank" rel="noopener">Android</a>
-      <a class="btn secondary" href="https://iridea85.github.io/scorta-doterra-download/app-v6/?platform=ios" target="_blank" rel="noopener">iPhone</a>
+      <button class="btn android copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/app-v6/?platform=android&chrome=1">Copia Android</button>
+      <button class="btn iphone copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/app-v6/?platform=ios">Copia iPhone</button>
+      <button class="btn copy-page copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/install/">Copia pagina completa</button>
     </div>
   </article>
 
   <article class="card">
-    <div class="top">
+    <a class="card-main" href="./ore-lavoro.html">
       <div class="icon">⏱️</div>
       <div><div class="name">Ore di lavoro</div><div class="note">Work Tracker</div></div>
-    </div>
+      <div class="openhint">›</div>
+    </a>
     <div class="actions">
-      <a class="btn" href="https://iridea85.github.io/scorta-doterra-download/ore/" target="_blank" rel="noopener">Android</a>
-      <a class="btn secondary" href="https://iridea85.github.io/scorta-doterra-download/work-tracker-web/" target="_blank" rel="noopener">iPhone</a>
+      <button class="btn android copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/ore/">Copia Android</button>
+      <button class="btn iphone copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/work-tracker-web/">Copia iPhone</button>
+      <button class="btn copy-page copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/hub-personale/ore-lavoro.html">Copia pagina completa</button>
     </div>
   </article>
 
   <article class="card">
-    <div class="top">
+    <a class="card-main" href="./filadelfia.html">
       <div class="icon">🕊️</div>
       <div><div class="name">Filadelfia – Pratiche</div><div class="note">Pratiche e manifesti</div></div>
-    </div>
+      <div class="openhint">›</div>
+    </a>
     <div class="actions">
-      <a class="btn" href="https://filadelfia-pratiche.iridea85.chatgpt.site" target="_blank" rel="noopener">Android</a>
-      <a class="btn secondary" href="https://filadelfia-pratiche.iridea85.chatgpt.site" target="_blank" rel="noopener">iPhone</a>
+      <button class="btn android copy-link" data-copy="https://filadelfia-pratiche.iridea85.chatgpt.site">Copia Android</button>
+      <button class="btn iphone copy-link" data-copy="https://filadelfia-pratiche.iridea85.chatgpt.site">Copia iPhone</button>
+      <button class="btn copy-page copy-link" data-copy="https://iridea85.github.io/scorta-doterra-download/hub-personale/filadelfia.html">Copia pagina completa</button>
     </div>
   </article>
-</section>
 
+</section>
 <footer>Hub personale · nessun dato viene salvato da questa pagina</footer>
 </main>
+
+<div id="toast" class="toast">Link copiato ✓</div>
+
 <script>
+async function copyText(text){
+  try{await navigator.clipboard.writeText(text)}
+  catch(_){
+    const t=document.createElement("textarea");
+    t.value=text;t.style.position="fixed";t.style.opacity="0";
+    document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();
+  }
+  const toast=document.getElementById("toast");
+  toast.classList.add("show");
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>toast.classList.remove("show"),1500);
+}
+document.querySelectorAll(".copy-link").forEach(b=>b.addEventListener("click",()=>copyText(b.dataset.copy)));
+
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const r=await navigator.serviceWorker.register("./sw.js?v=3",{updateViaCache:"none"});
+      const r=await navigator.serviceWorker.register("./sw.js?v=4",{updateViaCache:"none"});
       await r.update();
     }catch(_){}
   });
