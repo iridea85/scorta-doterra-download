@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17171a">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="description" content="Hub personale delle mie applicazioni">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>Le mie App</title>
+<style>
+:root{--bg:#f5f5f7;--card:#fff;--text:#17171a;--muted:#72727a;--line:#e7e7eb;--dark:#17171a}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+main{width:min(620px,calc(100% - 28px));margin:auto;padding:max(24px,env(safe-area-inset-top)) 0 max(34px,env(safe-area-inset-bottom))}
+header{padding:8px 4px 20px}
+h1{margin:0;font-size:34px;letter-spacing:-1.2px}
+header p{margin:7px 0 0;color:var(--muted);font-size:15px}
+.grid{display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:17px;box-shadow:0 6px 24px rgba(0,0,0,.04)}
+.top{display:flex;align-items:center;gap:13px}
+.icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:#f0f0f3;font-size:24px;flex:none}
+.name{font-weight:800;font-size:18px}
+.note{margin-top:2px;color:var(--muted);font-size:13px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+a.btn,.off{min-height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:14px;text-decoration:none;padding:10px 12px}
+a.btn{background:var(--dark);color:#fff}
+a.btn.secondary{background:#efeff2;color:var(--text)}
+.off{grid-column:1/-1;background:#f0f0f2;color:#9a9aa1}
+footer{padding:20px 5px 0;color:#9a9aa1;text-align:center;font-size:11px;line-height:1.45}
+@media(max-width:420px){.actions{grid-template-columns:1fr}.actions .off{grid-column:auto}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Le mie App</h1>
+  <p>Tutto in un unico posto.</p>
+</header>
+
+<section class="grid">
+  <article class="card">
+    <div class="top">
+      <div class="icon">◢</div>
+      <div><div class="name">RW Soluzioni</div><div class="note">Reverse Wind</div></div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="https://rw-hub.it/" target="_blank" rel="noopener">Android</a>
+      <a class="btn secondary" href="https://rw-hub.it/" target="_blank" rel="noopener">iPhone</a>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="top">
+      <div class="icon">🌿</div>
+      <div><div class="name">Scorta doTERRA</div><div class="note">Inventario e lista della spesa</div></div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="https://iridea85.github.io/scorta-doterra-download/app-v6/?platform=android&amp;chrome=1" target="_blank" rel="noopener">Android</a>
+      <a class="btn secondary" href="https://iridea85.github.io/scorta-doterra-download/app-v6/?platform=ios" target="_blank" rel="noopener">iPhone</a>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="top">
+      <div class="icon">⏱️</div>
+      <div><div class="name">Ore di lavoro</div><div class="note">Tracciamento personale</div></div>
+    </div>
+    <div class="actions"><div class="off">Link da collegare</div></div>
+  </article>
+
+  <article class="card">
+    <div class="top">
+      <div class="icon">🕊️</div>
+      <div><div class="name">Filadelfia</div><div class="note">Pratiche e manifesti</div></div>
+    </div>
+    <div class="actions"><div class="off">Link da collegare</div></div>
+  </article>
+</section>
+
+<footer>Hub personale · nessun dato viene salvato da questa pagina</footer>
+</main>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
