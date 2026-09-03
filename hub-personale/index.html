@@ -89,7 +89,14 @@ footer{padding:20px 5px 0;color:#9a9aa1;text-align:center;font-size:11px;line-he
 <footer>Hub personale · nessun dato viene salvato da questa pagina</footer>
 </main>
 <script>
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+if("serviceWorker" in navigator){
+  window.addEventListener("load",async()=>{
+    try{
+      const r=await navigator.serviceWorker.register("./sw.js?v=3",{updateViaCache:"none"});
+      await r.update();
+    }catch(_){}
+  });
+}
 </script>
 </body>
 </html>
