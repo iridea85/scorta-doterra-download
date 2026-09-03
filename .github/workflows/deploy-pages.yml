@@ -9,6 +9,7 @@ on:
       - "install/**"
       - "ore/**"
       - "work-tracker-web/**"
+      - "hub-personale/**"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -593,6 +594,7 @@ jobs:
           if [ -d install ]; then cp -R install site/install; fi
           if [ -d ore ]; then cp -R ore site/ore; fi
           if [ -d work-tracker-web ]; then cp -R work-tracker-web site/work-tracker-web; fi
+          if [ -d hub-personale ]; then cp -R hub-personale site/hub-personale; fi
           if [ -f Work-Tracker-Android.apk ]; then cp Work-Tracker-Android.apk site/Work-Tracker-Android.apk; fi
           touch site/.nojekyll
 
