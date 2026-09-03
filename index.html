@@ -237,6 +237,30 @@ footer{
     grid-template-columns:1fr;
   }
 }
+
+/* SCORTA_STATS_V1 */
+.stats-panel{
+  display:none;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:22px;
+  box-shadow:0 14px 38px rgba(64,43,70,.09);
+}
+.stats-panel.active{display:block}
+.stats-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+.stats-head h2{margin:0;font-size:25px}
+.stats-head p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.stats-close{border:0;background:var(--soft);color:var(--brand);border-radius:12px;padding:9px 11px;font-weight:900;text-decoration:none;font-size:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stat-card{border:1px solid var(--line);border-radius:18px;padding:16px;background:#fcfbfc}
+.stat-label{color:var(--muted);font-size:12px;font-weight:800;line-height:1.35}
+.stat-value{font-size:30px;font-weight:950;letter-spacing:-1px;margin-top:6px}
+.stat-wide{grid-column:1/-1}
+.stat-time{font-size:16px;font-weight:850;margin-top:6px}
+.stats-note{margin-top:16px;color:var(--muted);font-size:11px;line-height:1.5}
+@media(max-width:470px){.stats-grid{grid-template-columns:1fr}.stat-wide{grid-column:auto}}
+
 </style>
 </head>
 
@@ -344,6 +368,53 @@ footer{
 </section>
 
 
+
+<section class="stats-panel" id="statsPanel" aria-live="polite">
+  <div class="stats-head">
+    <div>
+      <h2>Statistiche Scorta doTERRA</h2>
+      <p>Visite della pagina e accessi alla web app.</p>
+    </div>
+    <a class="stats-close" href="./">Chiudi</a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Visite totali pagina</div>
+      <div class="stat-value" data-stat="views_total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Visitatori unici stimati</div>
+      <div class="stat-value" data-stat="unique_total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Visite oggi</div>
+      <div class="stat-value" data-stat="views_today">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unici oggi</div>
+      <div class="stat-value" data-stat="unique_today">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Accessi alla web app</div>
+      <div class="stat-value" data-stat="app_opens">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Android / iPhone</div>
+      <div class="stat-value" style="font-size:20px" data-stat="platform_clicks">—</div>
+    </div>
+    <div class="stat-card stat-wide">
+      <div class="stat-label">Ultima visita registrata</div>
+      <div class="stat-time" data-stat="last_visit">—</div>
+    </div>
+  </div>
+
+  <div class="stats-note">
+    “Visitatori unici” è una stima per dispositivo/browser. Se una persona cancella i dati del browser o usa un altro dispositivo può essere conteggiata di nuovo.
+  </div>
+</section>
+
+
 <footer>
 
   App personale indipendente e non ufficiale.
@@ -360,11 +431,9 @@ footer{
 
 <script>
 (function(){
-
+  // SCORTA_STATS_V1
   var u = navigator.userAgent || "";
-
   var android = /Android/i.test(u);
-
   var ios =
     /iPhone|iPad|iPod/i.test(u) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -372,11 +441,127 @@ footer{
   if(android){
     document.getElementById("android").classList.add("detected");
   }
-
   if(ios){
     document.getElementById("ios").classList.add("detected");
   }
 
+  var params = new URLSearchParams(location.search);
+  var statsMode = params.get("stats") === "1";
+  var API = "https://countapi.mileshilliard.com/api/v1";
+  var PREFIX = "scorta_doterra_iridea85_v1_";
+
+  function romeDay(){
+    try{
+      return new Intl.DateTimeFormat("en-CA",{
+        timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"
+      }).format(new Date()).replace(/-/g,"");
+    }catch(_){
+      var d=new Date();
+      return String(d.getFullYear())+
+        String(d.getMonth()+1).padStart(2,"0")+
+        String(d.getDate()).padStart(2,"0");
+    }
+  }
+
+  function send(path){
+    fetch(API + path + (path.indexOf("?") >= 0 ? "&" : "?") + "_=" + Date.now(),{
+      method:"GET",
+      mode:"no-cors",
+      cache:"no-store",
+      keepalive:true
+    }).catch(function(){});
+  }
+
+  function hit(key){ send("/hit/" + encodeURIComponent(PREFIX + key)); }
+  function setValue(key,value){
+    send("/set/" + encodeURIComponent(PREFIX + key) + "?value=" + encodeURIComponent(value));
+  }
+
+  function getValue(key){
+    return fetch(API + "/get/" + encodeURIComponent(PREFIX + key) + "?_=" + Date.now(),{
+      cache:"no-store"
+    }).then(function(r){
+      if(!r.ok) return {value:0};
+      return r.json();
+    }).then(function(d){
+      return Number(d && d.value) || 0;
+    }).catch(function(){ return 0; });
+  }
+
+  if(statsMode){
+    var panel=document.getElementById("statsPanel");
+    panel.classList.add("active");
+    Array.prototype.forEach.call(document.querySelectorAll("main.wrap > section:not(#statsPanel), main.wrap > footer"),function(el){
+      el.style.display="none";
+    });
+
+    var day=romeDay();
+    Promise.all([
+      getValue("views_total"),
+      getValue("unique_total"),
+      getValue("views_day_" + day),
+      getValue("unique_day_" + day),
+      getValue("app_opens"),
+      getValue("android_clicks"),
+      getValue("ios_clicks"),
+      getValue("last_visit")
+    ]).then(function(v){
+      function put(name,value){
+        var el=document.querySelector('[data-stat="' + name + '"]');
+        if(el) el.textContent=value;
+      }
+      put("views_total",v[0]);
+      put("unique_total",v[1]);
+      put("views_today",v[2]);
+      put("unique_today",v[3]);
+      put("app_opens",v[4]);
+      put("platform_clicks",v[5] + " / " + v[6]);
+
+      if(v[7] > 0){
+        var when=new Date(v[7]);
+        put("last_visit",when.toLocaleString("it-IT",{
+          timeZone:"Europe/Rome",
+          day:"2-digit",month:"2-digit",year:"numeric",
+          hour:"2-digit",minute:"2-digit"
+        }));
+      }else{
+        put("last_visit","Nessuna visita registrata");
+      }
+    });
+    return;
+  }
+
+  var day=romeDay();
+  hit("views_total");
+  hit("views_day_" + day);
+  setValue("last_visit",Date.now());
+
+  try{
+    if(localStorage.getItem("scorta_stats_unique_v1") !== "1"){
+      localStorage.setItem("scorta_stats_unique_v1","1");
+      hit("unique_total");
+    }
+    if(localStorage.getItem("scorta_stats_day_v1") !== day){
+      localStorage.setItem("scorta_stats_day_v1",day);
+      hit("unique_day_" + day);
+    }
+  }catch(_){}
+
+  var androidBtn=document.querySelector("#android .btn");
+  var iosBtn=document.querySelector("#ios .btn");
+
+  if(androidBtn){
+    androidBtn.addEventListener("click",function(){
+      hit("android_clicks");
+      hit("app_opens");
+    },true);
+  }
+  if(iosBtn){
+    iosBtn.addEventListener("click",function(){
+      hit("ios_clicks");
+      hit("app_opens");
+    },true);
+  }
 })();
 </script>
 
