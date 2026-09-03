@@ -1,5 +1,28 @@
-const CACHE="chiara-hub-v1";
-const FILES=["./","./index.html","./manifest.webmanifest","./icon.svg"];
-self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES))));
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
-self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});
+const CACHE="chiara-hub-v3";
+const FILES=["./manifest.webmanifest","./icon.svg"];
+
+self.addEventListener("install",e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));
+});
+
+self.addEventListener("activate",e=>{
+  e.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch",e=>{
+  if(e.request.method!=="GET") return;
+  e.respondWith(
+    fetch(e.request,{cache:"no-store"})
+      .then(res=>{
+        if(res && res.ok && new URL(e.request.url).origin===self.location.origin){
+          caches.open(CACHE).then(c=>c.put(e.request,res.clone())).catch(()=>{});
+        }
+        return res;
+      })
+      .catch(()=>caches.match(e.request))
+  );
+});
