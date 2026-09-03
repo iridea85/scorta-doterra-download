@@ -1,0 +1,13 @@
+{
+  "name": "Le mie App",
+  "short_name": "Le mie App",
+  "description": "Hub personale delle mie applicazioni",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#17171a",
+  "icons": [
+    {"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
