@@ -1,0 +1,96 @@
+name: RW controlled load test once
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/rw-load-test-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Progressive public load test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base='https://rw-hub.it'
+          ua='Chiara-RW-Controlled-Load-Test/1.0'
+
+          run_stage() {
+            total="$1"
+            concurrency="$2"
+            out="/tmp/rw-${total}.txt"
+            : > "$out"
+
+            echo "=== STAGE total=${total} concurrency=${concurrency} ==="
+            start=$(date +%s)
+
+            export base ua out
+            seq 1 "$total" | xargs -P "$concurrency" -I{} bash -c '
+              i="$1"
+              case $((i % 5)) in
+                0|1|2) url="$base/" ;;
+                3) url="$base/api/products" ;;
+                4) url="$base/api/solutions" ;;
+              esac
+              curl -sS -o /dev/null \
+                --connect-timeout 5 --max-time 15 \
+                -A "$ua" \
+                -w "%{http_code} %{time_total}\n" \
+                "$url" >> "$out" || echo "000 15.000" >> "$out"
+            ' _ {}
+
+            end=$(date +%s)
+            elapsed=$((end-start))
+
+            awk '
+              { codes[$1]++; times[NR]=$2; if ($1 !~ /^2/) bad++ }
+              END {
+                printf("requests=%d bad=%d bad_pct=%.2f elapsed_s=%d\n", NR, bad+0, (NR ? (bad+0)*100/NR : 100), ENVIRON["elapsed"]+0)
+                for (c in codes) printf("code_%s=%d\n", c, codes[c])
+              }
+            ' elapsed="$elapsed" "$out"
+
+            sort -n -k2 "$out" > "${out}.sorted"
+            count=$(wc -l < "$out")
+            p50_line=$(( (count * 50 + 99) / 100 )); [ "$p50_line" -lt 1 ] && p50_line=1
+            p95_line=$(( (count * 95 + 99) / 100 )); [ "$p95_line" -lt 1 ] && p95_line=1
+            p99_line=$(( (count * 99 + 99) / 100 )); [ "$p99_line" -lt 1 ] && p99_line=1
+            p50=$(sed -n "${p50_line}p" "${out}.sorted" | awk '{print $2}')
+            p95=$(sed -n "${p95_line}p" "${out}.sorted" | awk '{print $2}')
+            p99=$(sed -n "${p99_line}p" "${out}.sorted" | awk '{print $2}')
+            bad=$(awk '$1 !~ /^2/ {n++} END {print n+0}' "$out")
+            bad_pct=$(awk -v b="$bad" -v n="$count" 'BEGIN { if (n==0) print 100; else printf "%.3f", b*100/n }')
+
+            echo "latency_p50_s=$p50"
+            echo "latency_p95_s=$p95"
+            echo "latency_p99_s=$p99"
+
+            # Stop at first meaningful sign of strain.
+            awk -v bad="$bad_pct" -v p95="$p95" 'BEGIN { exit !((bad > 1.0) || (p95 > 5.0)) }' && {
+              echo "STOP_SIGNAL=1"
+              return 1
+            }
+
+            echo "STOP_SIGNAL=0"
+            return 0
+          }
+
+          # Warm-up without counting toward a stage.
+          for u in / /api/products /api/solutions; do
+            curl -sS -o /dev/null --max-time 15 -A "$ua" "$base$u" || true
+          done
+
+          run_stage 500 50 || exit 20
+          run_stage 600 60 || exit 21
+          run_stage 750 75 || exit 22
+          run_stage 900 90 || exit 23
+          run_stage 1000 100 || exit 24
+
+          echo "ALL_STAGES_PASSED=1"
