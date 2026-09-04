@@ -1,0 +1,43 @@
+name: Traffic test once
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/traffic-test-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  traffic-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate light test traffic
+        shell: bash
+        run: |
+          set -u
+          UA='Chiara-App-Traffic-Test/1.0'
+          hit() {
+            url="$1"
+            curl -LfsS --max-time 20 -A "$UA" "$url" -o /dev/null || true
+          }
+
+          for i in 1 2 3; do
+            hit "https://iridea85.github.io/scorta-doterra-download/?traffic_test=$i-$(date +%s%N)"
+            hit "https://iridea85.github.io/scorta-doterra-download/app-v6/?traffic_test=$i-$(date +%s%N)"
+            hit "https://rw-hub.it/?traffic_test=$i-$(date +%s%N)"
+            hit "https://filadelfia-pratiche.iridea85.chatgpt.site/?traffic_test=$i-$(date +%s%N)"
+            hit "https://iridea85.github.io/scorta-doterra-download/ore/?traffic_test=$i-$(date +%s%N)"
+            hit "https://iridea85.github.io/scorta-doterra-download/work-tracker-web/?traffic_test=$i-$(date +%s%N)"
+          done
+
+          DAY=$(TZ=Europe/Rome date +%Y%m%d)
+          NOW_MS=$(($(date +%s)*1000))
+          for i in 1 2 3; do
+            hit "https://countapi.mileshilliard.com/api/v1/hit/scorta_doterra_iridea85_v1_views_total?_=$NOW_MS$i"
+            hit "https://countapi.mileshilliard.com/api/v1/hit/scorta_doterra_iridea85_v1_views_day_${DAY}?_=$NOW_MS$i"
+          done
+          hit "https://countapi.mileshilliard.com/api/v1/hit/scorta_doterra_iridea85_v1_app_opens?_=$NOW_MS-4"
+          hit "https://countapi.mileshilliard.com/api/v1/hit/scorta_doterra_iridea85_v1_android_clicks?_=$NOW_MS-5"
+          hit "https://countapi.mileshilliard.com/api/v1/set/scorta_doterra_iridea85_v1_last_visit?value=$NOW_MS&_=$NOW_MS-6"
