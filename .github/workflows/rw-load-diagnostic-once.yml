@@ -1,0 +1,48 @@
+name: RW endpoint load diagnostic once
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/rw-load-diagnostic-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Identify failing public endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://rw-hub.it'
+          ua='Chiara-RW-Endpoint-Diagnostic/1.0'
+
+          probe() {
+            name="$1"; url="$2"; total="$3"; concurrency="$4"
+            out="/tmp/${name}.txt"; : > "$out"
+            export url ua out
+            echo "=== ${name} total=${total} concurrency=${concurrency} ==="
+            seq 1 "$total" | xargs -P "$concurrency" -I{} bash -c '
+              curl -sS -o /dev/null --connect-timeout 5 --max-time 15 -A "$ua" \
+                -w "%{http_code} %{time_total}\n" "$url" >> "$out" || echo "000 15.000" >> "$out"
+            '
+            count=$(wc -l < "$out")
+            awk '{codes[$1]++; if($1 !~ /^2/) bad++; sum+=$2; times[NR]=$2} END {printf("requests=%d bad=%d bad_pct=%.2f avg_s=%.3f\n",NR,bad+0,(NR?100*(bad+0)/NR:100),(NR?sum/NR:0)); for(c in codes) printf("code_%s=%d\n",c,codes[c])}' "$out"
+            sort -n -k2 "$out" > "${out}.sorted"
+            p95line=$(( (count*95+99)/100 )); [ "$p95line" -lt 1 ] && p95line=1
+            echo "p95_s=$(sed -n "${p95line}p" "${out}.sorted" | awk '{print $2}')"
+          }
+
+          probe home "$base/" 150 20
+          probe products "$base/api/products" 150 20
+          probe solutions "$base/api/solutions" 150 20
+
+          echo '=== RESPONSE HEADERS ==='
+          for path in / /api/products /api/solutions; do
+            echo "-- $path"
+            curl -sS -D - -o /dev/null --max-time 15 -A "$ua" "$base$path" | grep -Ei '^(HTTP/|x-rw-edge-cache:|cache-control:|cf-ray:|server:)' || true
+          done
