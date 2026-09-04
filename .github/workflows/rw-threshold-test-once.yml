@@ -1,0 +1,60 @@
+name: RW threshold test once
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/rw-threshold-test-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  threshold-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Find stable concurrency threshold
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://rw-hub.it'
+          ua='Chiara-RW-Threshold-Test/1.0'
+
+          run_stage() {
+            concurrency="$1"
+            total=300
+            out="/tmp/rw-threshold-${concurrency}.txt"
+            : > "$out"
+            export base ua out
+            echo "=== concurrency=${concurrency} total=${total} ==="
+            seq 1 "$total" | xargs -P "$concurrency" -I{} bash -c '
+              i="$1"
+              case $((i % 5)) in
+                0|1|2) url="$base/" ;;
+                3) url="$base/api/products" ;;
+                4) url="$base/api/solutions" ;;
+              esac
+              curl -sS -o /dev/null --connect-timeout 5 --max-time 12 -A "$ua" \
+                -w "%{http_code} %{time_total}\n" "$url" >> "$out" || echo "000 12.000" >> "$out"
+            ' _ {}
+            count=$(wc -l < "$out")
+            bad=$(awk '$1 !~ /^2/ {n++} END {print n+0}' "$out")
+            bad_pct=$(awk -v b="$bad" -v n="$count" 'BEGIN { if(n==0) print 100; else printf "%.2f", b*100/n }')
+            sort -n -k2 "$out" > "${out}.sorted"
+            p95line=$(( (count*95+99)/100 )); [ "$p95line" -lt 1 ] && p95line=1
+            p95=$(sed -n "${p95line}p" "${out}.sorted" | awk '{print $2}')
+            awk '{codes[$1]++} END {for(c in codes) printf("code_%s=%d\n",c,codes[c])}' "$out"
+            echo "bad=${bad} bad_pct=${bad_pct} p95_s=${p95}"
+            awk -v bad="$bad_pct" -v p95="$p95" 'BEGIN { exit !((bad > 1.0) || (p95 > 4.0)) }' && {
+              echo "FIRST_UNSTABLE_CONCURRENCY=${concurrency}"
+              return 1
+            }
+            echo "STABLE_CONCURRENCY=${concurrency}"
+          }
+
+          for c in 5 10 15 20 25 30 40 50; do
+            run_stage "$c" || exit 20
+            sleep 2
+          done
+          echo 'ALL_TESTED_LEVELS_STABLE=1'
