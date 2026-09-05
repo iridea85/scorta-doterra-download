@@ -1,0 +1,272 @@
+(() => {
+  'use strict';
+
+  const APP_VERSION = '1.2.0';
+  const BUILD_DATE = '05/09/2026';
+  const INVENTORY_SUFFIX = 'doterra_inventory_v2';
+  const META_KEY = 'scorta_plus_meta_v2';
+  const CATALOG_CACHE_KEY = 'scorta_catalog_cache_v1';
+  const CATALOG_URL = 'https://raw.githubusercontent.com/iridea85/scorta-doterra-download/main/catalog/scorta-catalog.json';
+  const LICENSE_KEYS = new Set(['scorta_license_v1', 'scorta_device_v1']);
+
+  const originalSetItem = Storage.prototype.setItem;
+  const originalRemoveItem = Storage.prototype.removeItem;
+
+  const state = {
+    inventory: [],
+    inventoryKey: null,
+    inventoryWrapped: true,
+    meta: null,
+    catalog: null,
+    dirty: false,
+    currentTab: 'home',
+    filter: 'all',
+    search: '',
+    catalogSearch: '',
+    suppressObserver: false,
+  };
+
+  const esc = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  const normalize = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+  const todayIso = () => new Date().toISOString();
+
+  const formatDate = (value, withTime = false) => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    try {
+      return new Intl.DateTimeFormat('it-IT', {
+        timeZone: 'Europe/Rome',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
+      }).format(d);
+    } catch (_) {
+      return d.toLocaleDateString('it-IT');
+    }
+  };
+
+  const defaultMeta = () => ({
+    schemaVersion: 2,
+    favorites: {},
+    openedDates: {},
+    purchaseHistory: {},
+    createdAt: todayIso(),
+    updatedAt: todayIso(),
+  });
+
+  const loadMeta = () => {
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      if (!raw) return defaultMeta();
+      const parsed = JSON.parse(raw);
+      return {
+        ...defaultMeta(),
+        ...parsed,
+        favorites: parsed.favorites || {},
+        openedDates: parsed.openedDates || {},
+        purchaseHistory: parsed.purchaseHistory || {},
+      };
+    } catch (_) {
+      return defaultMeta();
+    }
+  };
+
+  const saveMeta = () => {
+    state.meta.updatedAt = todayIso();
+    originalSetItem.call(localStorage, META_KEY, JSON.stringify(state.meta));
+  };
+
+  const findInventoryKey = () => {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key) keys.push(key);
+    }
+    return keys.find((key) => key === INVENTORY_SUFFIX) ||
+      keys.find((key) => key.endsWith(`.${INVENTORY_SUFFIX}`)) ||
+      keys.find((key) => key.endsWith(INVENTORY_SUFFIX)) ||
+      `flutter.${INVENTORY_SUFFIX}`;
+  };
+
+  const decodeInventoryRaw = (raw) => {
+    if (raw == null || raw === '') return { data: [], wrapped: true };
+    try {
+      const first = JSON.parse(raw);
+      if (Array.isArray(first)) return { data: first, wrapped: false };
+      if (typeof first === 'string') {
+        const second = JSON.parse(first);
+        if (Array.isArray(second)) return { data: second, wrapped: true };
+      }
+    } catch (_) {}
+    return { data: [], wrapped: true };
+  };
+
+  const readInventory = () => {
+    state.inventoryKey = findInventoryKey();
+    const decoded = decodeInventoryRaw(localStorage.getItem(state.inventoryKey));
+    state.inventoryWrapped = decoded.wrapped;
+    state.inventory = Array.isArray(decoded.data) ? decoded.data : [];
+    return state.inventory;
+  };
+
+  const encodeInventory = (inventory) => {
+    const json = JSON.stringify(inventory);
+    return state.inventoryWrapped ? JSON.stringify(json) : json;
+  };
+
+  const persistInventory = (inventory, { rerender = true } = {}) => {
+    state.inventory = inventory;
+    if (!state.inventoryKey) state.inventoryKey = findInventoryKey();
+    originalSetItem.call(localStorage, state.inventoryKey, encodeInventory(inventory));
+    state.dirty = true;
+    if (rerender && document.getElementById('scortaPlusPanel')) renderCurrent();
+  };
+
+  const keyForProduct = (product) => String(product?.id || product?.name || 'unknown');
+
+  const effectiveShopping = (product) => {
+    const manual = Number(product?.shoppingQuantity || 0);
+    if (manual > 0) return Math.max(0, Math.round(manual));
+    if (product?.shoppingDismissed === true) return 0;
+    const reserve = Number(product?.targetReserve ?? 1);
+    const stock = Number(product?.stock ?? 0);
+    return Math.max(0, Math.round(reserve - stock));
+  };
+
+  const isFavorite = (product) => !!state.meta.favorites[keyForProduct(product)];
+
+  const toggleFavorite = (product) => {
+    const key = keyForProduct(product);
+    if (state.meta.favorites[key]) delete state.meta.favorites[key];
+    else state.meta.favorites[key] = true;
+    saveMeta();
+    renderCurrent();
+  };
+
+  const lastPurchase = (product) => {
+    const list = state.meta.purchaseHistory[keyForProduct(product)] || [];
+    return list.length ? list[list.length - 1] : null;
+  };
+
+  const recordPurchase = (product, qty, when = todayIso()) => {
+    qty = Math.max(1, Number(qty || 1));
+    const key = keyForProduct(product);
+    const list = state.meta.purchaseHistory[key] || [];
+    list.push({ date: when, qty, name: product.name || 'Prodotto' });
+    state.meta.purchaseHistory[key] = list.slice(-100);
+    saveMeta();
+  };
+
+  const observeInventoryDiff = (before, after) => {
+    if (state.suppressObserver || !Array.isArray(before) || !Array.isArray(after)) return;
+    const oldMap = new Map(before.map((p) => [keyForProduct(p), p]));
+    let changed = false;
+
+    after.forEach((next) => {
+      const key = keyForProduct(next);
+      const prev = oldMap.get(key);
+      if (!prev) {
+        if (next.opened === true && !state.meta.openedDates[key]) {
+          state.meta.openedDates[key] = todayIso();
+          changed = true;
+        }
+        return;
+      }
+
+      if (prev.opened !== true && next.opened === true) {
+        state.meta.openedDates[key] = todayIso();
+        changed = true;
+      }
+
+      const stockDiff = Number(next.stock || 0) - Number(prev.stock || 0);
+      const wasShopping = effectiveShopping(prev);
+      const nowShopping = effectiveShopping(next);
+      if (stockDiff > 0 && wasShopping > 0 && nowShopping === 0) {
+        recordPurchase(next, stockDiff, todayIso());
+      }
+    });
+
+    if (changed) saveMeta();
+    state.inventory = after;
+  };
+
+  Storage.prototype.setItem = function patchedSetItem(key, value) {
+    if (this !== localStorage || !String(key).endsWith(INVENTORY_SUFFIX)) {
+      return originalSetItem.call(this, key, value);
+    }
+    const before = decodeInventoryRaw(this.getItem(key)).data;
+    const result = originalSetItem.call(this, key, value);
+    const after = decodeInventoryRaw(value).data;
+    observeInventoryDiff(before, after);
+    return result;
+  };
+
+  const loadCatalog = async () => {
+    let cached = null;
+    try {
+      cached = JSON.parse(localStorage.getItem(CATALOG_CACHE_KEY) || 'null');
+    } catch (_) {}
+    if (cached) state.catalog = cached;
+
+    try {
+      const response = await fetch(`${CATALOG_URL}?v=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (!data || !Array.isArray(data.products)) throw new Error('Catalogo non valido');
+      state.catalog = data;
+      originalSetItem.call(localStorage, CATALOG_CACHE_KEY, JSON.stringify(data));
+      if (document.getElementById('scortaPlusPanel')) renderCurrent();
+    } catch (_) {
+      if (!state.catalog) {
+        state.catalog = {
+          schemaVersion: 1,
+          catalogVersion: 'base',
+          updatedAt: '2026-09-05',
+          products: [
+            {
+              name: 'Arancio dolce',
+              category: 'Oli essenziali singoli',
+              unit: '15 ml',
+              aliases: ['Wild Orange', 'Arancio selvatico'],
+            },
+          ],
+        };
+      }
+    }
+  };
+
+  const inventoryByName = (name) => {
+    const n = normalize(name);
+    return state.inventory.find((p) => normalize(p.name) === n) || null;
+  };
+
+  const newInventoryItem = (product, { stock = 0, opened = false, shoppingQuantity = 0 } = {}) => ({
+    id: String(Date.now()) + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+    name: product.name || 'Prodotto doTERRA',
+    category: product.category || 'Oli essenziali singoli',
+    unit: product.unit || '',
+    stock: Math.max(0, Number(stock || 0)),
+    opened: !!opened,
+    trackOpening: /oli|miscele|touch/i.test(product.category || ''),
+    targetReserve: 1,
+    shoppingQuantity: Math.max(0, Number(shoppingQuantity || 0)),
+    shoppingDismissed: false,
+    manualShopping: Number(shoppingQuantity || 0) > 0,
+    notes: '',
+  });
+
+  const addCatalogToInventory = (catalogProduct, mode = 'inventory') => {
+    
