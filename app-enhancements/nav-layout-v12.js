@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const STYLE_ID = 'scortaUnifiedNavV18Style';
-  const NAV_ID = 'scortaUnifiedBottomNavV18';
+  const STYLE_ID = 'scortaUnifiedNavV19Style';
+  const NAV_ID = 'scortaUnifiedBottomNavV19';
 
   function injectStyle(){
     if (document.getElementById(STYLE_ID)) return;
@@ -11,8 +11,7 @@
     style.textContent=`
       #scortaPlusFab{display:none!important}
 
-      /* Un'unica barra gestita da noi copre esattamente la barra Flutter.
-         Niente più inoltro di tocchi al canvas Flutter. */
+      /* Un'unica barra gestita da noi copre esattamente la barra Flutter. */
       #${NAV_ID}{
         position:fixed!important;
         left:0!important;
@@ -76,9 +75,12 @@
       'scortaCatalogFloatV12','scortaToolsBottomV12','scortaToolsBottomV13',
       'scortaToolsBottomV15','scortaToolsBottomV16','scortaToolsBottomV17',
       'scortaToolsNav','scpPersistentBottomNav','scortaInventoryBottomProxyV17',
-      'scortaShoppingBottomProxyV17'
+      'scortaShoppingBottomProxyV17','scortaUnifiedBottomNavV18'
     ].forEach(id=>document.getElementById(id)?.remove());
-    ['scpPersistentBottomNavStyle','scortaNavV17Style','scortaNavV16Style','scortaNavV15Style'].forEach(id=>document.getElementById(id)?.remove());
+    [
+      'scpPersistentBottomNavStyle','scortaNavV17Style','scortaNavV16Style',
+      'scortaNavV15Style','scortaUnifiedNavV18Style'
+    ].forEach(id=>document.getElementById(id)?.remove());
   }
 
   function ensureNav(){
@@ -112,13 +114,10 @@
   }
 
   function goInventory(){
-    /* L'inventario è la schermata iniziale Flutter: ricaricare la stessa URL
-       è il modo più affidabile per tornarci, senza perdere localStorage. */
+    /* L'inventario Flutter è già sotto al pannello: basta chiudere Strumenti.
+       Nessun reload della pagina, quindi nessun lampeggio. */
     hardClosePanel();
-    const url=new URL(location.href);
-    url.searchParams.set('screen','inventory');
-    url.searchParams.set('navv','18');
-    location.replace(url.toString());
+    syncActive();
   }
 
   function openPanelThen(tab){
@@ -145,8 +144,6 @@
   }
 
   function goShopping(){
-    /* La schermata Spesa viene aperta direttamente dal pannello migliorato,
-       senza tentare di pilotare il canvas Flutter sottostante. */
     openPanelThen('shopping');
   }
 
