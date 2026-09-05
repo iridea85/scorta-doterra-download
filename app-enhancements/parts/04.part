@@ -57,7 +57,7 @@ restoreBackupFile = async (file) => {
       </div>
       <div class="scp-info"><b>Catalogo centralizzato</b><p>L'app controlla il file catalogo online e usa gli aggiornamenti disponibili senza dover ricompilare la web app. Se sei offline usa l'ultima copia salvata.</p></div>
       <div class="scp-info"><b>Licenze</b><p>Il sistema di attivazione attuale resta invariato. Il pannello licenze online con cliente, dispositivo, reset e disattivazione è predisposto come passaggio successivo quando l'app entrerà in vendita su scala più ampia.</p></div>
-      <div class="scp-info"><b>Dati</b><p>Inventario e preferenze restano locali sul dispositivo. Usa “Dati → Crea backup” prima di cambiare telefono o cancellare i dati del browser.</p></div>
+      <div class="scp-info"><b>Dati</b><p>Inventario e preferenze restano locali sul dispositivo. Usa “Backup e dati → Crea backup” prima di cambiare telefono o cancellare i dati del browser.</p></div>
     `;
   };
 
@@ -71,6 +71,28 @@ restoreBackupFile = async (file) => {
       case 'info': renderInfo(); break;
       default: renderHome();
     }
+  };
+
+  /* Navigazione condivisa: cambia contenuto nello stesso pannello senza
+     distruggere e ricreare tutta la schermata. */
+  const showTab = (tab = 'home') => {
+    const allowed = new Set(['home', 'catalog', 'shopping', 'history', 'data', 'info']);
+    state.currentTab = allowed.has(tab) ? tab : 'home';
+    readInventory();
+    state.meta = loadMeta();
+    if (!state.catalog) loadCatalog();
+
+    let panel = document.getElementById('scortaPlusPanel');
+    if (!panel) {
+      panelShell();
+      panel = document.getElementById('scortaPlusPanel');
+    } else {
+      panel.querySelectorAll('[data-tab]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.tab === state.currentTab);
+      });
+    }
+    renderCurrent();
+    return true;
   };
 
   const maybeShowFab = () => {
@@ -96,6 +118,7 @@ restoreBackupFile = async (file) => {
   };
 
   window.scortaPlusOpen = openPanel;
+  window.scortaPlusShow = showTab;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
   else init();
 })();
