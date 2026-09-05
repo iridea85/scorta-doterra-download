@@ -68,9 +68,10 @@ jobs:
               raise SystemExit(f'Pattern Apri catalogo inatteso: {s.count(old)}')
           s=s.replace(old,'q=l',1)
 
-          # Sostituisce la scatolina grande della Home con un cuore Material Icons.
+          # Sostituisce la scatolina grande della Home con un cuore Unicode,
+          # senza dipendere dal subset Material Icons compilato.
           old_icon='B.Hi=new A.cp(B.ky,58,B.dq,null,null)'
-          new_icon='B.Hi=new A.cp(new A.c3(59517,"MaterialIcons",!1),58,B.dq,null,null)'
+          new_icon='B.Hi=new A.cp(new A.c3(9829,null,!1),58,B.dq,null,null)'
           if s.count(old_icon) != 1:
               raise SystemExit(f'Pattern icona Home inatteso: {s.count(old_icon)}')
           s=s.replace(old_icon,new_icon,1)
@@ -204,7 +205,7 @@ jobs:
 
           grep -q 'nav-layout-v14.js' site/app-v14/index.html
           ! grep -q 'q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l' site/app-v14/main.dart.js
-          grep -q 'new A.c3(59517,"MaterialIcons",!1)' site/app-v14/main.dart.js
+          grep -q 'new A.c3(9829,null,!1)' site/app-v14/main.dart.js
           grep -q 'Icon-192-heart-v14.png' site/app-v14/manifest.json
           test -s site/app-v14/icons/Icon-512-heart-v14.png
 
