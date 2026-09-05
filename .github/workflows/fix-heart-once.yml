@@ -1,0 +1,39 @@
+name: Fix visible home heart once
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/fix-heart-once.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Use Unicode heart in Flutter icon
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/deploy-pages.yml')
+          s=p.read_text(encoding='utf-8')
+          old='new A.c3(59517,"MaterialIcons",!1)'
+          new='new A.c3(9829,null,!1)'
+          if s.count(old) != 2:
+              raise SystemExit(f'Expected 2 old heart references, found {s.count(old)}')
+          s=s.replace(old,new)
+          s=s.replace('cuore Material Icons','cuore Unicode')
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name "iridea85"
+          git config user.email "iridea85@gmail.com"
+          git add .github/workflows/deploy-pages.yml
+          git commit -m "fix: render visible heart in Scorta home"
+          git push
