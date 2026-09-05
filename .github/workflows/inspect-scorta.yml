@@ -46,6 +46,26 @@ jobs:
                   a=max(0,pos-240); b=min(len(s),pos+420)
                   print(s[a:b].replace('\n',' ')[:700])
                   print()
+
+          print('=== AWU TARGETS ===')
+          for pattern in [r'awU\(\)', r'awU=', r'awU:', r'\$\.awU']:
+              print('PATTERN', pattern)
+              hits=[m.start() for m in re.finditer(pattern,s)]
+              print('hits',len(hits))
+              for pos in hits[:16]:
+                  a=max(0,pos-1800); b=min(len(s),pos+5000)
+                  print(s[a:b].replace('\n',' ')[:7000])
+                  print('\n---CUT---\n')
+
+          print('=== STORAGE TARGET ===')
+          for term in ['doterra_inventory_v2','oils_inventory','shoppingQuantity','targetReserve']:
+              hits=[m.start() for m in re.finditer(re.escape(term),s)]
+              print(term, len(hits))
+              for pos in hits[:8]:
+                  a=max(0,pos-1300); b=min(len(s),pos+2600)
+                  print(s[a:b].replace('\n',' ')[:4000])
+                  print('\n---CUT---\n')
+
           # Extract likely string constants relevant to storage/catalog.
           vals=[]
           for m in re.finditer(r'"([^"\\]{3,120})"',s):
