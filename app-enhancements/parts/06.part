@@ -3,7 +3,7 @@
   'use strict';
 
   const INVENTORY_SUFFIX = 'doterra_inventory_v2';
-  const STYLE_ID = 'scortaStockNumberV2Style';
+  const STYLE_ID = 'scortaStockNumberV3Style';
 
   const decodeRaw = (raw) => {
     if (raw == null || raw === '') return { data: [], wrapped: true };
@@ -67,14 +67,30 @@
     return changed ? next : null;
   };
 
+  const removeProduct = (key) => {
+    let removed = false;
+    for (const storageKey of inventoryKeys()) {
+      const raw = localStorage.getItem(storageKey);
+      const decoded = decodeRaw(raw);
+      if (!Array.isArray(decoded.data)) continue;
+      const updated = decoded.data.filter((product) => productKey(product) !== key);
+      if (updated.length !== decoded.data.length) {
+        localStorage.setItem(storageKey, encodeLike(raw, updated));
+        removed = true;
+      }
+    }
+    return removed;
+  };
+
   const injectStyle = () => {
     document.getElementById('scortaStockNumberV1Style')?.remove();
+    document.getElementById('scortaStockNumberV2Style')?.remove();
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
       .scp-stock-editor{
-        display:flex;align-items:center;gap:9px;margin:11px 0 2px;padding:11px 12px;
+        display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:11px 0 2px;padding:11px 12px;
         border:1px solid #dfd3e3;border-radius:15px;background:#faf6fb
       }
       .scp-stock-editor label{flex:1;min-width:0;font-size:12px;font-weight:900;color:#514956;line-height:1.2}
@@ -90,6 +106,11 @@
       .scp-stock-input:focus{border-color:#80658b;box-shadow:0 0 0 3px rgba(110,85,120,.10)}
       .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button{display:none}
       .scp-stock-saved{display:block;margin-top:4px;font-size:10px;color:#4d7048;font-weight:800}
+      .scp-stock-editor .scp-remove-inventory{
+        flex:0 0 100%;width:100%;margin-top:3px;border:1px solid #e7cfd2;background:#fff8f8;color:#934a51;
+        border-radius:11px;padding:9px 10px;font-size:11px;font-weight:850;text-align:center;-webkit-tap-highlight-color:transparent
+      }
+      .scp-stock-editor .scp-remove-inventory:active{background:#f7eaea}
     `;
     document.head.appendChild(style);
   };
@@ -110,11 +131,18 @@
         <button class="scp-stock-step" type="button" data-stock-step="-1" aria-label="Diminuisci quantità">−</button>
         <input class="scp-stock-input" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="${Math.max(0, Number(product.stock || 0))}" aria-label="Quantità nel mio inventario">
         <button class="scp-stock-step" type="button" data-stock-step="1" aria-label="Aumenta quantità">+</button>
+        <button class="scp-remove-inventory" type="button">Rimuovi dall’inventario</button>
       `;
 
       const row = card.querySelector('.scp-row');
       if (row) row.insertAdjacentElement('afterend', editor);
       else card.prepend(editor);
+    } else if (!editor.querySelector('.scp-remove-inventory')) {
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'scp-remove-inventory';
+      remove.textContent = 'Rimuovi dall’inventario';
+      editor.appendChild(remove);
     }
 
     if (editor.dataset.stockWired === '1') return;
@@ -166,6 +194,20 @@
         input.value = String(Math.max(0, current + delta));
         commit();
       });
+    });
+
+    editor.querySelector('.scp-remove-inventory')?.addEventListener('click', () => {
+      const current = readProduct(key);
+      if (!current) return;
+      const name = current.name || 'questo prodotto';
+      const ok = confirm(`Rimuovere ${name} dall’inventario?\n\nSe vuoi solo indicare che non ne hai più, lascia la quantità a 0: il prodotto resterà visibile come esaurito.`);
+      if (!ok) return;
+      if (!removeProduct(key)) return;
+      if (typeof window.scortaPlusShow === 'function') {
+        window.scortaPlusShow('home');
+      } else {
+        card.remove();
+      }
     });
   };
 
