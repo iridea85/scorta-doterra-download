@@ -63,6 +63,13 @@ jobs:
               raise SystemExit('flutter bootstrap marker non trovato')
           if enhancement not in s:
               s=s.replace(marker, enhancement+'\n  '+marker, 1)
+
+          # Home: il pulsante Strumenti è diverso dalla Guida rapida già presente.
+          # Lo spostiamo più in alto per evitare qualsiasi sovrapposizione.
+          home_fix='<style id="scorta-home-layout-fix">#scortaPlusFab{bottom:calc(190px + env(safe-area-inset-bottom))!important;right:14px!important}</style>'
+          if home_fix not in s:
+              s=s.replace('</head>', '  '+home_fix+'\n</head>', 1)
+
           p.write_text(s,encoding='utf-8')
 
           m=Path('site/app-v6/manifest.json')
@@ -72,7 +79,7 @@ jobs:
           PY
 
           cat > site/app-v6/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME = 'scorta-doterra-pwa-v8';
+          const CACHE_NAME = 'scorta-doterra-pwa-v9';
           self.addEventListener('install', (event) => {
             event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll([
               './','./index.html','./manifest.json','./scorta-enhancements-v2.js','./icons/Icon-192.png','./icons/Icon-512.png'
@@ -100,7 +107,7 @@ jobs:
           import re
           p=Path('site/app-v6/flutter_bootstrap.js')
           s=p.read_text(encoding='utf-8')
-          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v8"',s,count=1)
+          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v9"',s,count=1)
           if n != 1:
               raise SystemExit('serviceWorkerVersion non trovato')
           p.write_text(s,encoding='utf-8')
@@ -126,14 +133,15 @@ jobs:
               m.write_text(x,encoding='utf-8')
 
           sw=Path('site/app-v7/flutter_service_worker.js')
-          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v8','scorta-doterra-license-v2')
+          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v9','scorta-doterra-license-v3')
           sw.write_text(x,encoding='utf-8')
           PY
 
           grep -q 'scorta-enhancements-v2.js' site/app-v6/index.html
           grep -q 'scorta-enhancements-v2.js' site/app-v7/index.html
           grep -q 'license-gate-v1.js' site/app-v7/index.html
-          grep -q 'serviceWorkerVersion: "scorta-pwa-v8"' site/app-v6/flutter_bootstrap.js
+          grep -q 'scorta-home-layout-fix' site/app-v6/index.html
+          grep -q 'serviceWorkerVersion: "scorta-pwa-v9"' site/app-v6/flutter_bootstrap.js
 
       - name: Mantieni pagine e download esistenti
         run: |
