@@ -36,172 +36,160 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepara Scorta doTERRA v12
+      - name: Prepara Scorta doTERRA v13
         run: |
           set -euo pipefail
           rm -rf site
-          mkdir -p site/app-v12 site/catalog
+          mkdir -p site/app-v13 site/catalog
           cp index.html site/index.html
           cp catalog/scorta-catalog.json site/catalog/scorta-catalog.json
 
           curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip" -o /tmp/Scorta-doTERRA-Web.zip
-          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v12
-          test -s site/app-v12/index.html
-          test -s site/app-v12/main.dart.js
+          unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v13
+          test -s site/app-v13/index.html
+          test -s site/app-v13/main.dart.js
 
-          cat app-enhancements/parts/*.part > site/app-v12/scorta-enhancements-v2.js
-          cp app-enhancements/nav-layout-v12.js site/app-v12/nav-layout-v12.js
-          node --check site/app-v12/scorta-enhancements-v2.js
-          node --check site/app-v12/nav-layout-v12.js
+          cat app-enhancements/parts/*.part > site/app-v13/scorta-enhancements-v2.js
+          cp app-enhancements/nav-layout-v12.js site/app-v13/nav-layout-v13.js
+          node --check site/app-v13/scorta-enhancements-v2.js
+          node --check site/app-v13/nav-layout-v13.js
 
           python3 - <<'PY'
           from pathlib import Path
-          import struct, zlib, binascii, math, json, re
+          import struct, zlib, binascii, json, re
 
           def chunk(kind, data):
               return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', binascii.crc32(kind + data) & 0xffffffff)
 
-          def blend(bg, fg, alpha):
-              return tuple(int(bg[i] * (1-alpha) + fg[i] * alpha) for i in range(3))
-
           def write_icon(path, size):
+              # Icona volutamente minimale: viola pieno + cuore bianco.
+              purple=(110,85,120)
+              white=(255,255,255)
               rows=[]
               for y in range(size):
                   ny=(y+0.5)/size
                   row=bytearray([0])
                   for x in range(size):
                       nx=(x+0.5)/size
-                      t=ny
-                      bg=(int(145*(1-t)+83*t), int(105*(1-t)+56*t), int(154*(1-t)+103*t))
-                      d=((nx-.28)**2+(ny-.22)**2)**.5
-                      bg=blend(bg,(224,187,227),max(0,1-d/.65)*.17)
-                      dx=nx-.5
-                      inside=False; edge=False
-                      if .16 <= ny <= .84:
-                          if ny <= .50:
-                              u=(ny-.16)/.34
-                              hw=.29*(max(0,u)**.70)
-                          else:
-                              u=(ny-.53)/.31
-                              hw=.29*math.sqrt(max(0,1-u*u))
-                          if hw>0:
-                              r=abs(dx)/hw
-                              inside=r<=1; edge=.91<=r<=1.035
-                      col=bg
-                      if inside: col=blend(col,(246,237,249),.16)
-                      if edge: col=blend(col,(255,255,255),.96)
-                      hx=(nx-.5)/.165
-                      hy=(ny-.535)/.152
+                      col=purple
+
+                      # Cuore grande e centrato.
+                      hx=(nx-.5)/.235
+                      hy=(ny-.515)/.215
                       yy=-hy
                       heart=(hx*hx+yy*yy-1)**3-hx*hx*yy*yy*yy <= 0
-                      if heart and .32<ny<.69: col=(255,255,255)
+                      if heart and .24 < ny < .77:
+                          col=white
+
                       row.extend((*col,255))
                   rows.append(bytes(row))
+
               raw=b''.join(rows)
-              png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',size,size,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b'')
-              p=Path(path); p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(png)
+              png=(b'\x89PNG\r\n\x1a\n'
+                   +chunk(b'IHDR',struct.pack('>IIBBBBB',size,size,8,6,0,0,0))
+                   +chunk(b'IDAT',zlib.compress(raw,9))
+                   +chunk(b'IEND',b''))
+              p=Path(path)
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_bytes(png)
 
-          write_icon('site/app-v12/icons/Icon-192-heart-v12.png',192)
-          write_icon('site/app-v12/icons/Icon-512-heart-v12.png',512)
-          Path('site/app-v12/icons/Icon-192.png').write_bytes(Path('site/app-v12/icons/Icon-192-heart-v12.png').read_bytes())
-          Path('site/app-v12/icons/Icon-512.png').write_bytes(Path('site/app-v12/icons/Icon-512-heart-v12.png').read_bytes())
+          write_icon('site/app-v13/icons/Icon-192-heart-v13.png',192)
+          write_icon('site/app-v13/icons/Icon-512-heart-v13.png',512)
+          Path('site/app-v13/icons/Icon-192.png').write_bytes(Path('site/app-v13/icons/Icon-192-heart-v13.png').read_bytes())
+          Path('site/app-v13/icons/Icon-512.png').write_bytes(Path('site/app-v13/icons/Icon-512-heart-v13.png').read_bytes())
 
-          p=Path('site/app-v12/index.html')
+          p=Path('site/app-v13/index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('<base href="/scorta-doterra-download/app/">','<base href="/scorta-doterra-download/app-v12/">')
-          s=s.replace('icons/Icon-192.png','icons/Icon-192-heart-v12.png')
-          s=s.replace('icons/Icon-512.png','icons/Icon-512-heart-v12.png')
-          s=s.replace('href="manifest.json"','href="manifest.json?v=12"')
+          s=s.replace('<base href="/scorta-doterra-download/app/">','<base href="/scorta-doterra-download/app-v13/">')
+          s=s.replace('icons/Icon-192.png','icons/Icon-192-heart-v13.png')
+          s=s.replace('icons/Icon-512.png','icons/Icon-512-heart-v13.png')
+          s=s.replace('href="manifest.json"','href="manifest.json?v=13"')
           marker='<script src="flutter_bootstrap.js" async></script>'
           if marker not in s:
               raise SystemExit('flutter bootstrap marker non trovato')
-          scripts='<script src="scorta-enhancements-v2.js?v=12"></script>\n  <script src="nav-layout-v12.js?v=12"></script>'
+          scripts='<script src="scorta-enhancements-v2.js?v=13"></script>\n  <script src="nav-layout-v13.js?v=13"></script>'
           s=s.replace(marker,scripts+'\n  '+marker,1)
           p.write_text(s,encoding='utf-8')
 
-          m=Path('site/app-v12/manifest.json')
+          m=Path('site/app-v13/manifest.json')
           data=json.loads(m.read_text(encoding='utf-8')) if m.exists() else {}
           data['name']='Scorta doTERRA'
           data['short_name']='Scorta doTERRA'
-          data['id']='/scorta-doterra-download/app-v12/'
-          data['start_url']='/scorta-doterra-download/app-v12/'
-          data['scope']='/scorta-doterra-download/app-v12/'
+          data['id']='/scorta-doterra-download/app-v13/'
+          data['start_url']='/scorta-doterra-download/app-v13/'
+          data['scope']='/scorta-doterra-download/app-v13/'
           data['display']='standalone'
           data['theme_color']='#6e5578'
-          data['background_color']='#f7f4f7'
+          data['background_color']='#6e5578'
           data['icons']=[
-            {'src':'icons/Icon-192-heart-v12.png','sizes':'192x192','type':'image/png','purpose':'any maskable'},
-            {'src':'icons/Icon-512-heart-v12.png','sizes':'512x512','type':'image/png','purpose':'any maskable'}
+            {'src':'icons/Icon-192-heart-v13.png','sizes':'192x192','type':'image/png','purpose':'any maskable'},
+            {'src':'icons/Icon-512-heart-v13.png','sizes':'512x512','type':'image/png','purpose':'any maskable'}
           ]
           m.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
 
-          b=Path('site/app-v12/flutter_bootstrap.js')
+          b=Path('site/app-v13/flutter_bootstrap.js')
           bs=b.read_text(encoding='utf-8')
-          bs,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v12"',bs,count=1)
-          if n!=1: raise SystemExit('serviceWorkerVersion non trovato')
+          bs,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v13"',bs,count=1)
+          if n!=1:
+              raise SystemExit('serviceWorkerVersion non trovato')
           b.write_text(bs,encoding='utf-8')
           PY
 
-          cat > site/app-v12/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME='scorta-doterra-pwa-v12';
+          cat > site/app-v13/flutter_service_worker.js <<'EOF'
+          const CACHE_NAME='scorta-doterra-pwa-v13';
           self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll([
-            './','./index.html','./manifest.json','./scorta-enhancements-v2.js?v=12','./nav-layout-v12.js?v=12','./icons/Icon-192-heart-v12.png','./icons/Icon-512-heart-v12.png'
+            './','./index.html','./manifest.json?v=13','./scorta-enhancements-v2.js?v=13','./nav-layout-v13.js?v=13','./icons/Icon-192-heart-v13.png','./icons/Icon-512-heart-v13.png'
           ])).then(()=>self.skipWaiting())));
           self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('scorta-doterra-')&&k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
           self.addEventListener('fetch',event=>{
             if(event.request.method!=='GET') return;
             event.respondWith(fetch(event.request).then(response=>{
               if(response&&response.ok&&event.request.url.startsWith(self.location.origin)){
-                const copy=response.clone(); caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)).catch(()=>{});
+                const copy=response.clone();
+                caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)).catch(()=>{});
               }
               return response;
             }).catch(()=>caches.match(event.request)));
           });
           EOF
 
-          # Compatibilità con la vecchia app-v6: al prossimo avvio viene portata alla v12.
-          mkdir -p site/app-v6/icons
-          cp site/app-v12/icons/Icon-192-heart-v12.png site/app-v6/icons/Icon-192.png
-          cp site/app-v12/icons/Icon-512-heart-v12.png site/app-v6/icons/Icon-512.png
-          cat > site/app-v6/index.html <<'EOF'
-          <!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6e5578"><title>Scorta doTERRA</title></head><body><script>location.replace('../app-v12/'+location.search+location.hash);</script><p>Aggiornamento Scorta doTERRA…</p></body></html>
+          # Vecchie installazioni: portale alla v13.
+          for old in app-v6 app-v12; do
+            mkdir -p "site/$old/icons"
+            cp site/app-v13/icons/Icon-192-heart-v13.png "site/$old/icons/Icon-192.png"
+            cp site/app-v13/icons/Icon-512-heart-v13.png "site/$old/icons/Icon-512.png"
+            cat > "site/$old/index.html" <<EOF
+          <!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6e5578"><title>Scorta doTERRA</title></head><body><script>location.replace('../app-v13/'+location.search+location.hash);</script><p>Aggiornamento Scorta doTERRA…</p></body></html>
           EOF
-          cat > site/app-v6/flutter_service_worker.js <<'EOF'
-          self.addEventListener('install',()=>self.skipWaiting());
-          self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
-          self.addEventListener('fetch',event=>{
-            if(event.request.mode==='navigate'){
-              const u=new URL(event.request.url); const t=new URL('../app-v12/',self.registration.scope); t.search=u.search; t.hash=u.hash;
-              event.respondWith(Promise.resolve(Response.redirect(t.href,302))); return;
-            }
-            event.respondWith(fetch(event.request));
-          });
+            cat > "site/$old/manifest.json" <<EOF
+          {"name":"Scorta doTERRA","short_name":"Scorta doTERRA","id":"/scorta-doterra-download/$old/","start_url":"/scorta-doterra-download/$old/","scope":"/scorta-doterra-download/$old/","display":"standalone","theme_color":"#6e5578","background_color":"#6e5578","icons":[{"src":"icons/Icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icons/Icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
           EOF
-          cat > site/app-v6/manifest.json <<'EOF'
-          {"name":"Scorta doTERRA","short_name":"Scorta doTERRA","id":"/scorta-doterra-download/app-v6/","start_url":"/scorta-doterra-download/app-v6/","scope":"/scorta-doterra-download/app-v6/","display":"standalone","theme_color":"#6e5578","background_color":"#f7f4f7","icons":[{"src":"icons/Icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icons/Icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
-          EOF
+          done
 
-          # Manteniamo anche app-v7 per compatibilità con eventuali link precedenti.
+          # Compatibilità app-v7 con licenza.
           rm -rf site/app-v7
-          cp -R site/app-v12 site/app-v7
+          cp -R site/app-v13 site/app-v7
           cp app-enhancements/license-gate-v1.js site/app-v7/license-gate-v1.js
           python3 - <<'PY'
           from pathlib import Path
           import json
           p=Path('site/app-v7/index.html')
-          s=p.read_text(encoding='utf-8').replace('/scorta-doterra-download/app-v12/','/scorta-doterra-download/app-v7/')
+          s=p.read_text(encoding='utf-8').replace('/scorta-doterra-download/app-v13/','/scorta-doterra-download/app-v7/')
           marker='<script src="flutter_bootstrap.js" async></script>'
-          if marker in s: s=s.replace(marker,'<script src="license-gate-v1.js"></script>',1)
+          if marker in s:
+              s=s.replace(marker,'<script src="license-gate-v1.js"></script>',1)
           p.write_text(s,encoding='utf-8')
-          m=Path('site/app-v7/manifest.json'); data=json.loads(m.read_text(encoding='utf-8'))
+          m=Path('site/app-v7/manifest.json')
+          data=json.loads(m.read_text(encoding='utf-8'))
           data['id']=data['start_url']=data['scope']='/scorta-doterra-download/app-v7/'
           m.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
-          grep -q 'nav-layout-v12.js' site/app-v12/index.html
-          grep -q 'app-v12' site/app-v6/index.html
-          grep -q 'Icon-192-heart-v12.png' site/app-v12/manifest.json
-          test -s site/app-v12/icons/Icon-512-heart-v12.png
+          grep -q 'nav-layout-v13.js' site/app-v13/index.html
+          grep -q 'app-v13' site/app-v6/index.html
+          grep -q 'app-v13' site/app-v12/index.html
+          grep -q 'Icon-192-heart-v13.png' site/app-v13/manifest.json
+          test -s site/app-v13/icons/Icon-512-heart-v13.png
 
       - name: Mantieni pagine e download esistenti
         run: |
