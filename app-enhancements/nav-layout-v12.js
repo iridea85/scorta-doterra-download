@@ -12,8 +12,8 @@
       /* Nasconde il vecchio pulsante flottante Strumenti/Catalogo. */
       #scortaPlusFab{display:none!important}
 
-      /* Unico elemento aggiunto: Strumenti sostituisce visivamente Catalogo
-         nella posizione centrale della barra inferiore Flutter. */
+      /* Strumenti sostituisce visivamente Catalogo nella posizione centrale
+         della barra inferiore Flutter. */
       #${TOOLS_ID}{
         position:fixed;
         z-index:2147483050;
@@ -53,7 +53,13 @@
         letter-spacing:.1px;
       }
       #${TOOLS_ID}:active{background:#f1e5ef}
-      #scortaPlusPanel{z-index:2147483200!important}
+
+      /* Il pannello Strumenti non copre più la barra in basso.
+         Inventario · Strumenti · Spesa restano sempre visibili e cliccabili. */
+      #scortaPlusPanel{
+        z-index:2147483200!important;
+        bottom:calc(92px + env(safe-area-inset-bottom))!important;
+      }
     `;
     document.head.appendChild(style);
   }
