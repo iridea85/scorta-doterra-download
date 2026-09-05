@@ -1,0 +1,172 @@
+lbar .scp-btn{padding:12px 10px;font-size:12px}
+      .scp-info{background:#fff;border:1px solid #e5dde8;border-radius:18px;padding:14px;margin:9px 0}.scp-info b{display:block;font-size:13px}.scp-info p{margin:5px 0 0;color:#766f79;font-size:12px;line-height:1.5}
+      .scp-kv{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid #eee8f0;font-size:12px}.scp-kv:last-child{border-bottom:0}.scp-kv span{color:#766f79}.scp-kv b{text-align:right}
+      .scp-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147483200;background:#2f2a32;color:#fff;border-radius:14px;padding:10px 13px;font-size:12px;font-weight:800;box-shadow:0 8px 26px rgba(0,0,0,.25);max-width:min(88vw,430px);text-align:center}
+      .scp-file{display:none}
+      .scp-history{border-left:3px solid #d8c9dd;padding-left:11px;margin:10px 0}.scp-history b{font-size:13px}.scp-history span{display:block;color:#776f7a;font-size:11px;margin-top:2px}
+      .scp-alias{font-size:11px;color:#817983;margin-top:6px;line-height:1.35}
+      @media(min-width:700px){.scp-body{width:min(760px,100%);margin:0 auto}.scp-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+    `;
+    document.head.appendChild(style);
+  };
+
+  const toast = (message) => {
+    document.querySelectorAll('.scp-toast').forEach((el) => el.remove());
+    const el = document.createElement('div');
+    el.className = 'scp-toast';
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2200);
+  };
+
+  const renderFab = () => {
+    injectStyles();
+    let fab = document.getElementById('scortaPlusFab');
+    if (!fab) {
+      fab = document.createElement('button');
+      fab.id = 'scortaPlusFab';
+      fab.type = 'button';
+      fab.innerHTML = '<span style="font-size:17px">✦</span><span>Strumenti</span>';
+      fab.addEventListener('click', openPanel);
+      document.body.appendChild(fab);
+    }
+    fab.classList.add('show');
+  };
+
+  const tabButton = (id, label) => `<button class="scp-tab ${state.currentTab === id ? 'active' : ''}" data-tab="${id}">${label}</button>`;
+
+  const panelShell = () => {
+    const existing = document.getElementById('scortaPlusPanel');
+    if (existing) existing.remove();
+    const panel = document.createElement('section');
+    panel.id = 'scortaPlusPanel';
+    panel.innerHTML = `
+      <div class="scp-head">
+        <div class="scp-title"><strong>Scorta doTERRA</strong><span>Gestione rapida · stessa scorta dell'app</span></div>
+        <button class="scp-close" id="scpClose">Chiudi</button>
+      </div>
+      <div class="scp-tabs">
+        ${tabButton('home', 'Home')}
+        ${tabButton('catalog', 'Catalogo')}
+        ${tabButton('shopping', 'Spesa')}
+        ${tabButton('history', 'Cronologia')}
+        ${tabButton('data', 'Dati')}
+        ${tabButton('info', 'Info')}
+      </div>
+      <div class="scp-body" id="scpBody"></div>
+    `;
+    document.body.appendChild(panel);
+    document.getElementById('scpClose').addEventListener('click', closePanel);
+    panel.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => {
+      state.currentTab = button.dataset.tab;
+      panelShell();
+      renderCurrent();
+    }));
+  };
+
+  const openPanel = () => {
+    readInventory();
+    state.meta = loadMeta();
+    panelShell();
+    renderCurrent();
+  };
+
+  const closePanel = () => {
+    document.getElementById('scortaPlusPanel')?.remove();
+    if (state.dirty) {
+      state.dirty = false;
+      location.reload();
+    }
+  };
+
+  const renderHome = () => {
+    const stats = getStats();
+    const items = filteredInventory();
+    const body = document.getElementById('scpBody');
+    body.innerHTML = `
+      <div class="scp-grid">
+        <button class="scp-stat" data-filter="all"><b>${stats.total}</b><span>Prodotti</span></button>
+        <button class="scp-stat" data-filter="opened"><b>${stats.opened}</b><span>Aperti</span></button>
+        <button class="scp-stat" data-filter="shopping"><b>${stats.shopping}</b><span>Da comprare</span></button>
+        <button class="scp-stat" data-filter="exhausted"><b>${stats.exhausted}</b><span>Esauriti</span></button>
+        <button class="scp-stat" data-filter="below"><b>${stats.below}</b><span>Sotto minimo</span></button>
+        <button class="scp-stat" data-filter="favorites"><b>${stats.favorites}</b><span>Preferiti</span></button>
+      </div>
+      <input class="scp-search" id="scpSearch" placeholder="Cerca nell'inventario…" value="${esc(state.search)}">
+      <div class="scp-chips">
+        ${[['all','Tutti'],['opened','Aperti'],['closed','Chiusi'],['exhausted','Esauriti'],['shopping','Da comprare'],['below','Sotto minimo'],['favorites','Preferiti']].map(([id,label]) => `<button class="scp-chip ${state.filter === id ? 'active' : ''}" data-filter="${id}">${label}</button>`).join('')}
+      </div>
+      <div id="scpInventoryList">${items.length ? items.map(inventoryCard).join('') : '<div class="scp-empty">Nessun prodotto con questo filtro.</div>'}</div>
+    `;
+
+    body.querySelectorAll('[data-filter]').forEach((el) => el.addEventListener('click', () => {
+      state.filter = el.dataset.filter;
+      renderHome();
+    }));
+    document.getElementById('scpSearch').addEventListener('input', (e) => {
+      state.search = e.target.value;
+      renderHome();
+      const input = document.getElementById('scpSearch');
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+    wireInventoryActions(body);
+  };
+
+  const inventoryCard = (p) => {
+    const key = keyForProduct(p);
+    const shopping = effectiveShopping(p);
+    const purchase = lastPurchase(p);
+    const openedAt = state.meta.openedDates[key];
+    const badges = [];
+    badges.push(`<span class="scp-badge">Scorta ${Number(p.stock || 0)}</span>`);
+    if (p.opened) badges.push('<span class="scp-badge green">Aperto</span>');
+    if (shopping > 0) badges.push(`<span class="scp-badge orange">Da comprare ${shopping}</span>`);
+    if (Number(p.stock || 0) <= 0 && !p.opened) badges.push('<span class="scp-badge red">Esaurito</span>');
+    return `
+      <article class="scp-card" data-product="${esc(key)}">
+        <div class="scp-row">
+          <div class="scp-main">
+            <div class="scp-name">${esc(p.name)}</div>
+            <div class="scp-sub">${esc(p.category || '')}${p.unit ? ` · ${esc(p.unit)}` : ''}</div>
+            ${openedAt ? `<div class="scp-sub">Aperto il ${formatDate(openedAt)}</div>` : ''}
+            ${purchase ? `<div class="scp-sub">Ultimo acquisto ${formatDate(purchase.date)} · ${purchase.qty} pz</div>` : ''}
+          </div>
+          <button class="scp-star" data-action="favorite" aria-label="Preferito">${isFavorite(p) ? '★' : '☆'}</button>
+        </div>
+        <div class="scp-badges">${badges.join('')}</div>
+        <div class="scp-actions">
+          <button class="scp-btn" data-action="shopping">${shopping > 0 ? 'Spesa +1' : 'Metti nella spesa'}</button>
+          ${p.trackOpening !== false ? `<button class="scp-btn" data-action="opened">${p.opened ? 'Segna finita' : 'Apri una confezione'}</button>` : ''}
+          ${shopping > 0 ? '<button class="scp-btn primary" data-action="purchased">Segna acquistato</button>' : ''}
+        </div>
+      </article>
+    `;
+  };
+
+  const wireInventoryActions = (root) => {
+    root.querySelectorAll('[data-product]').forEach((card) => {
+      const key = card.dataset.product;
+      const product = () => state.inventory.find((p) => keyForProduct(p) === key);
+      card.querySelector('[data-action="favorite"]')?.addEventListener('click', () => toggleFavorite(product()));
+      card.querySelector('[data-action="shopping"]')?.addEventListener('click', () => changeShopping(key, 1));
+      card.querySelector('[data-action="opened"]')?.addEventListener('click', () => toggleOpened(key));
+      card.querySelector('[data-action="purchased"]')?.addEventListener('click', () => markPurchased(key));
+    });
+  };
+
+  const renderCatalog = () => {
+    const body = document.getElementById('scpBody');
+    const products = state.catalog?.products || [];
+    const q = normalize(state.catalogSearch);
+    const filtered = products.filter((p) => {
+      if (!q) return true;
+      return normalize(`${p.name} ${(p.aliases || []).join(' ')} ${p.category || ''}`).includes(q);
+    });
+    body.innerHTML = `
+      <div class="scp-info">
+        <b>Catalogo aggiornabile online</b>
+        <p>Le correzioni e i nuovi prodotti arrivano da un file centrale. Per esempio <strong>Arancio dolce</strong> viene trovato anche cercando <strong>Wild Orange</strong> o <strong>Arancio selvatico</strong>.</p>
+      </div>
+      <input class="scp-search" id="scpCatalogSearch" placeholder="Cerca nome italiano o inglese…" value="${esc(state.catalogSearch)}">
+      <div class="scp-muted">Catalogo online ${esc(state.catalog?.catalogVersion || 'base')} · aggiornato ${formatDate(sta
