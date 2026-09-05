@@ -1,11 +1,8 @@
 (() => {
   'use strict';
 
-  const STYLE_ID = 'scortaNavV17Style';
-  const TOOLS_ID = 'scortaToolsBottomV17';
-  const INV_PROXY_ID = 'scortaInventoryBottomProxyV17';
-  const SHOP_PROXY_ID = 'scortaShoppingBottomProxyV17';
-  const PENDING_KEY = 'scortaPendingMainNavV17';
+  const STYLE_ID = 'scortaUnifiedNavV18Style';
+  const NAV_ID = 'scortaUnifiedBottomNavV18';
 
   function injectStyle(){
     if (document.getElementById(STYLE_ID)) return;
@@ -14,30 +11,38 @@
     style.textContent=`
       #scortaPlusFab{display:none!important}
 
-      /* Strumenti occupa il terzo centrale della barra principale. */
-      #${TOOLS_ID}{
+      /* Un'unica barra gestita da noi copre esattamente la barra Flutter.
+         Niente più inoltro di tocchi al canvas Flutter. */
+      #${NAV_ID}{
         position:fixed!important;
-        z-index:2147483646!important;
-        left:33.333vw!important;
-        right:auto!important;
+        left:0!important;
+        right:0!important;
         bottom:0!important;
-        width:33.334vw!important;
+        z-index:2147483647!important;
         height:calc(92px + env(safe-area-inset-bottom))!important;
-        padding:10px 6px calc(9px + env(safe-area-inset-bottom))!important;
-        border:0!important;
-        border-radius:0!important;
+        padding:8px 0 env(safe-area-inset-bottom)!important;
+        display:grid!important;
+        grid-template-columns:repeat(3,1fr)!important;
         background:#f8eef7!important;
+        border-top:1px solid #eee1ee!important;
+        box-shadow:0 -2px 10px rgba(67,48,73,.04)!important;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;
+      }
+      #${NAV_ID} button{
+        border:0!important;
+        background:transparent!important;
         color:#4e4651!important;
         display:flex!important;
         flex-direction:column!important;
         align-items:center!important;
         justify-content:center!important;
         gap:5px!important;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;
+        padding:6px!important;
+        margin:0!important;
+        min-width:0!important;
         -webkit-tap-highlight-color:transparent;
-        box-shadow:none!important;
       }
-      #${TOOLS_ID} .ico{
+      #${NAV_ID} .ico{
         width:54px;
         height:34px;
         border-radius:18px;
@@ -46,17 +51,12 @@
         font-size:22px;
         line-height:1;
         color:#6e5578;
-        background:#efd8f3;
       }
-      #${TOOLS_ID} .lbl{
-        font-size:13px;
-        line-height:1;
-        font-weight:500;
-        letter-spacing:.1px;
-      }
-      #${TOOLS_ID}:active{background:#f1e5ef!important}
+      #${NAV_ID} .lbl{font-size:13px;line-height:1;font-weight:500;letter-spacing:.1px}
+      #${NAV_ID} button.active .ico{background:#efd8f3}
+      #${NAV_ID} button:active{background:#f1e5ef!important}
 
-      /* Strumenti termina sopra la barra originale dell'app. */
+      /* Il pannello termina sopra la barra unica. */
       #scortaPlusPanel{
         position:fixed!important;
         top:0!important;
@@ -67,163 +67,112 @@
         max-height:none!important;
         z-index:2147483200!important;
       }
-
-      /* Zone di tocco invisibili sopra Inventario e Spesa, attive SOLO
-         mentre Strumenti è aperto. Chiudono Strumenti e inoltrano davvero
-         il tocco alla barra Flutter sottostante. */
-      #${INV_PROXY_ID},#${SHOP_PROXY_ID}{
-        position:fixed!important;
-        bottom:0!important;
-        width:33.333vw!important;
-        height:calc(92px + env(safe-area-inset-bottom))!important;
-        z-index:2147483647!important;
-        border:0!important;
-        margin:0!important;
-        padding:0!important;
-        background:transparent!important;
-        color:transparent!important;
-        display:none;
-        -webkit-tap-highlight-color:transparent;
-      }
-      #${INV_PROXY_ID}{left:0!important}
-      #${SHOP_PROXY_ID}{right:0!important}
     `;
     document.head.appendChild(style);
   }
 
-  function openTools(){
-    if (typeof window.scortaPlusOpen === 'function') window.scortaPlusOpen();
-  }
-
-  function removeOldAddedButtons(){
+  function removeOldNav(){
     [
-      'scortaCatalogFloatV12',
-      'scortaToolsBottomV12',
-      'scortaToolsBottomV13',
-      'scortaToolsBottomV15',
-      'scortaToolsBottomV16',
-      'scortaToolsNav',
-      'scpPersistentBottomNav'
+      'scortaCatalogFloatV12','scortaToolsBottomV12','scortaToolsBottomV13',
+      'scortaToolsBottomV15','scortaToolsBottomV16','scortaToolsBottomV17',
+      'scortaToolsNav','scpPersistentBottomNav','scortaInventoryBottomProxyV17',
+      'scortaShoppingBottomProxyV17'
     ].forEach(id=>document.getElementById(id)?.remove());
-    document.getElementById('scpPersistentBottomNavStyle')?.remove();
+    ['scpPersistentBottomNavStyle','scortaNavV17Style','scortaNavV16Style','scortaNavV15Style'].forEach(id=>document.getElementById(id)?.remove());
   }
 
-  function ensureTools(){
+  function ensureNav(){
     injectStyle();
-    removeOldAddedButtons();
-    if (!document.getElementById(TOOLS_ID)) {
-      const b=document.createElement('button');
-      b.id=TOOLS_ID;
-      b.type='button';
-      b.setAttribute('aria-label','Strumenti');
-      b.innerHTML='<span class="ico">⚙</span><span class="lbl">Strumenti</span>';
-      b.addEventListener('click',openTools);
-      document.body.appendChild(b);
+    removeOldNav();
+    if (document.getElementById(NAV_ID)) { syncActive(); return; }
+
+    const nav=document.createElement('nav');
+    nav.id=NAV_ID;
+    nav.setAttribute('aria-label','Navigazione principale');
+    nav.innerHTML=`
+      <button type="button" data-mainnav="inventory" aria-label="Inventario">
+        <span class="ico">▣</span><span class="lbl">Inventario</span>
+      </button>
+      <button type="button" data-mainnav="tools" aria-label="Strumenti">
+        <span class="ico">⚙</span><span class="lbl">Strumenti</span>
+      </button>
+      <button type="button" data-mainnav="shopping" aria-label="Spesa">
+        <span class="ico">⌑</span><span class="lbl">Spesa</span>
+      </button>`;
+    document.body.appendChild(nav);
+
+    nav.querySelector('[data-mainnav="inventory"]').addEventListener('click',goInventory);
+    nav.querySelector('[data-mainnav="tools"]').addEventListener('click',goTools);
+    nav.querySelector('[data-mainnav="shopping"]').addEventListener('click',goShopping);
+    syncActive();
+  }
+
+  function hardClosePanel(){
+    document.getElementById('scortaPlusPanel')?.remove();
+  }
+
+  function goInventory(){
+    /* L'inventario è la schermata iniziale Flutter: ricaricare la stessa URL
+       è il modo più affidabile per tornarci, senza perdere localStorage. */
+    hardClosePanel();
+    const url=new URL(location.href);
+    url.searchParams.set('screen','inventory');
+    url.searchParams.set('navv','18');
+    location.replace(url.toString());
+  }
+
+  function openPanelThen(tab){
+    if (!document.getElementById('scortaPlusPanel')) {
+      if (typeof window.scortaPlusOpen === 'function') window.scortaPlusOpen();
     }
-    ensureNavProxies();
-  }
-
-  function ensureNavProxies(){
-    if (!document.getElementById(INV_PROXY_ID)) {
-      const b=document.createElement('button');
-      b.id=INV_PROXY_ID;
-      b.type='button';
-      b.setAttribute('aria-label','Inventario');
-      b.addEventListener('click',(e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        navigateFromTools('inventory');
-      });
-      document.body.appendChild(b);
+    const activate=()=>{
+      const panel=document.getElementById('scortaPlusPanel');
+      if (!panel) return false;
+      const btn=panel.querySelector(`[data-tab="${tab}"]`);
+      if (btn) btn.click();
+      syncActive();
+      return true;
+    };
+    if (!activate()) {
+      setTimeout(activate,40);
+      setTimeout(activate,120);
+      setTimeout(activate,260);
     }
-    if (!document.getElementById(SHOP_PROXY_ID)) {
-      const b=document.createElement('button');
-      b.id=SHOP_PROXY_ID;
-      b.type='button';
-      b.setAttribute('aria-label','Spesa');
-      b.addEventListener('click',(e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        navigateFromTools('shopping');
-      });
-      document.body.appendChild(b);
+  }
+
+  function goTools(){
+    openPanelThen('home');
+  }
+
+  function goShopping(){
+    /* La schermata Spesa viene aperta direttamente dal pannello migliorato,
+       senza tentare di pilotare il canvas Flutter sottostante. */
+    openPanelThen('shopping');
+  }
+
+  function syncActive(){
+    const nav=document.getElementById(NAV_ID);
+    if (!nav) return;
+    nav.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    const panel=document.getElementById('scortaPlusPanel');
+    if (!panel) {
+      nav.querySelector('[data-mainnav="inventory"]')?.classList.add('active');
+      return;
     }
-    syncProxyVisibility();
-  }
-
-  function syncProxyVisibility(){
-    const open=!!document.getElementById('scortaPlusPanel');
-    const inv=document.getElementById(INV_PROXY_ID);
-    const shop=document.getElementById(SHOP_PROXY_ID);
-    if (inv) inv.style.display=open?'block':'none';
-    if (shop) shop.style.display=open?'block':'none';
-  }
-
-  function navigateFromTools(destination){
-    try { sessionStorage.setItem(PENDING_KEY,destination); } catch (_) {}
-
-    const close=document.getElementById('scpClose');
-    if (close) close.click();
-    else document.getElementById('scortaPlusPanel')?.remove();
-
-    syncProxyVisibility();
-    setTimeout(runPendingNavigation,40);
-    setTimeout(runPendingNavigation,140);
-    setTimeout(runPendingNavigation,350);
-  }
-
-  function dispatchFlutterTap(x,y){
-    const inv=document.getElementById(INV_PROXY_ID);
-    const shop=document.getElementById(SHOP_PROXY_ID);
-    const tools=document.getElementById(TOOLS_ID);
-    const previous=[inv,shop,tools].map(el=>el?.style.pointerEvents || '');
-    [inv,shop,tools].forEach(el=>{ if(el) el.style.pointerEvents='none'; });
-
-    const target=document.elementFromPoint(x,y)
-      || document.querySelector('flt-glass-pane,flutter-view,canvas');
-
-    if (target) {
-      const common={bubbles:true,cancelable:true,composed:true,clientX:x,clientY:y,screenX:x,screenY:y,button:0,buttons:1};
-      try { target.dispatchEvent(new PointerEvent('pointerdown',{...common,pointerId:1,pointerType:'touch',isPrimary:true})); } catch (_) {}
-      try { target.dispatchEvent(new MouseEvent('mousedown',common)); } catch (_) {}
-      try { target.dispatchEvent(new PointerEvent('pointerup',{...common,buttons:0,pointerId:1,pointerType:'touch',isPrimary:true})); } catch (_) {}
-      try { target.dispatchEvent(new MouseEvent('mouseup',{...common,buttons:0})); } catch (_) {}
-      try { target.dispatchEvent(new MouseEvent('click',{...common,buttons:0})); } catch (_) {}
-    }
-
-    [inv,shop,tools].forEach((el,i)=>{ if(el) el.style.pointerEvents=previous[i]; });
-  }
-
-  function runPendingNavigation(){
-    if (document.getElementById('scortaPlusPanel')) return;
-    let destination=null;
-    try { destination=sessionStorage.getItem(PENDING_KEY); } catch (_) {}
-    if (!destination) return;
-
-    const y=Math.max(1,window.innerHeight-46);
-    const x=destination==='shopping' ? window.innerWidth*(5/6) : window.innerWidth*(1/6);
-
-    try { sessionStorage.removeItem(PENDING_KEY); } catch (_) {}
-    requestAnimationFrame(()=>requestAnimationFrame(()=>dispatchFlutterTap(x,y)));
+    const activeTab=panel.querySelector('.scp-tab.active')?.dataset?.tab;
+    if (activeTab==='shopping') nav.querySelector('[data-mainnav="shopping"]')?.classList.add('active');
+    else nav.querySelector('[data-mainnav="tools"]')?.classList.add('active');
   }
 
   const observer=new MutationObserver(()=>{
-    if (document.querySelector('flutter-view,flt-glass-pane,flt-scene-host,canvas')) ensureTools();
-    syncProxyVisibility();
-    runPendingNavigation();
+    ensureNav();
+    syncActive();
   });
   observer.observe(document.documentElement,{childList:true,subtree:true});
 
-  if(document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded',()=>{
-      ensureTools();
-      runPendingNavigation();
-    },{once:true});
-  } else {
-    ensureTools();
-    runPendingNavigation();
-  }
-  setTimeout(()=>{ensureTools();runPendingNavigation();},250);
-  setTimeout(()=>{ensureTools();runPendingNavigation();},800);
-  setTimeout(()=>{ensureTools();runPendingNavigation();},1800);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ensureNav,{once:true});
+  else ensureNav();
+  setTimeout(ensureNav,250);
+  setTimeout(ensureNav,800);
+  setTimeout(ensureNav,1800);
 })();
