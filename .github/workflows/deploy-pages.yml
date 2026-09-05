@@ -10,6 +10,7 @@ on:
       - "ore/**"
       - "work-tracker-web/**"
       - "hub-personale/**"
+      - "app-enhancements/**"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -34,560 +35,107 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-
-
-
-      - name: Prepara Scorta doTERRA Web App
+      - name: Prepara Scorta doTERRA Web App 1.2
         run: |
-          set -e
-          mkdir -p site/app-v6
+          set -euo pipefail
+          rm -rf site
+          mkdir -p site/app-v6 site/catalog
           cp index.html site/index.html
+          cp catalog/scorta-catalog.json site/catalog/scorta-catalog.json
 
-          curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip"             -o /tmp/Scorta-doTERRA-Web.zip
+          curl -fL "https://github.com/iridea85/scorta-doterra-download/releases/download/v1.0.11-it/Scorta-doTERRA-Web.zip" -o /tmp/Scorta-doTERRA-Web.zip
           unzip -q /tmp/Scorta-doTERRA-Web.zip -d site/app-v6
           test -s site/app-v6/index.html
+          test -s site/app-v6/main.dart.js
+
+          cat app-enhancements/parts/*.part > site/app-v6/scorta-enhancements-v2.js
+          node --check site/app-v6/scorta-enhancements-v2.js
+          echo "5f6d26bb48567a4b74fa46de98c93f4625505b0252f28d820e699623a0f3c320  site/app-v6/scorta-enhancements-v2.js" | sha256sum -c -
 
           python3 - <<'PY'
           from pathlib import Path
-          import struct, zlib, binascii
+          p=Path('site/app-v6/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<base href="/scorta-doterra-download/app/">','<base href="/scorta-doterra-download/app-v6/">')
+          marker='<script src="flutter_bootstrap.js" async></script>'
+          enhancement='<script src="scorta-enhancements-v2.js"></script>'
+          if marker not in s:
+              raise SystemExit('flutter bootstrap marker non trovato')
+          if enhancement not in s:
+              s=s.replace(marker, enhancement+'\n  '+marker, 1)
+          p.write_text(s,encoding='utf-8')
 
-          def chunk(kind, data):
-              return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", binascii.crc32(kind + data) & 0xffffffff)
-
-          def write_png(path, size):
-              rows = []
-              for y in range(size):
-                  row = bytearray([0])
-                  ny = (y + 0.5) / size
-                  for x in range(size):
-                      nx = (x + 0.5) / size
-                      t = ny
-                      bg = (
-                          int(124*(1-t) + 92*t),
-                          int(98*(1-t) + 69*t),
-                          int(134*(1-t) + 101*t),
-                          255,
-                      )
-                      dx = nx - 0.5
-                      dy = ny - 0.40
-                      in_circle = (dx*dx + dy*dy) <= 0.22*0.22
-                      in_tail = 0.40 <= ny <= 0.78 and abs(dx) <= 0.22 * (1 - (ny - 0.40)/0.38)
-                      in_drop = in_circle or in_tail
-                      inner = ((nx-0.5)**2 + (ny-0.54)**2) <= 0.095**2
-                      color = (250,247,250,255) if in_drop and not inner else bg
-                      row.extend(color)
-                  rows.append(bytes(row))
-
-              raw = b"".join(rows)
-              data = (
-                  b"\x89PNG\r\n\x1a\n" +
-                  chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)) +
-                  chunk(b"IDAT", zlib.compress(raw, 9)) +
-                  chunk(b"IEND", b"")
-              )
-              p = Path(path)
-              p.parent.mkdir(parents=True, exist_ok=True)
-              p.write_bytes(data)
-
-          write_png("site/app-v6/icons/Icon-192.png", 192)
-          write_png("site/app-v6/icons/Icon-512.png", 512)
-          PY
-
-          python3 - <<'PY'
-          from pathlib import Path
-          import struct
-          for p in [Path("site/app-v6/icons/Icon-192.png"), Path("site/app-v6/icons/Icon-512.png")]:
-              data=p.read_bytes()
-              assert data[:8] == b"\x89PNG\r\n\x1a\n"
-              w,h=struct.unpack(">II", data[16:24])
-              assert (w,h) in [(192,192),(512,512)]
-              print("ICON OK", p, w, h, len(data))
-          PY
-
-          cat > site/app-v6/manifest.json <<'EOF'
-          {
-            "id": "/scorta-doterra-download/app-v6/",
-            "name": "Scorta doTERRA",
-            "short_name": "Scorta",
-            "start_url": "/scorta-doterra-download/app-v6/",
-            "scope": "/scorta-doterra-download/app-v6/",
-            "display": "standalone",
-            "display_override": ["standalone", "minimal-ui"],
-            "background_color": "#F7F5F7",
-            "theme_color": "#6E5578",
-            "description": "Inventario personale doTERRA con catalogo in italiano e lista della spesa.",
-            "orientation": "portrait-primary",
-            "prefer_related_applications": false,
-            "icons": [
-              {
-                "src": "icons/Icon-192.png",
-                "sizes": "192x192",
-                "type": "image/png",
-                "purpose": "any"
-              },
-              {
-                "src": "icons/Icon-512.png",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "any"
-              },
-              {
-                "src": "icons/Icon-512.png",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "maskable"
-              }
-            ]
-          }
-          EOF
-
-          cat > site/app-v6/install-helper-v6.js <<'EOF'
-          (() => {
-            const standalone =
-              window.matchMedia('(display-mode: standalone)').matches ||
-              window.navigator.standalone === true;
-            if (standalone) return;
-
-            const ua = navigator.userAgent || '';
-            const isIOS =
-              /iPhone|iPad|iPod/i.test(ua) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-            let deferredPrompt = null;
-            let pendingClick = false;
-            let pendingTimer = null;
-
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.setAttribute('aria-label', 'Installa Scorta doTERRA');
-            button.innerHTML =
-              '<span style="font-size:18px;line-height:1">⇩</span><span>Installa</span>';
-
-            Object.assign(button.style, {
-              position: 'fixed',
-              top: 'calc(10px + env(safe-area-inset-top))',
-              right: '12px',
-              zIndex: '99999',
-              border: '1px solid rgba(110,85,120,.18)',
-              borderRadius: '14px',
-              padding: '9px 12px',
-              background: '#6E5578',
-              color: '#FFFFFF',
-              fontSize: '14px',
-              fontWeight: '800',
-              lineHeight: '1',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 6px 18px rgba(50,34,56,.18)',
-              WebkitTapHighlightColor: 'transparent'
-            });
-
-            const resetButton = () => {
-              button.disabled = false;
-              button.style.opacity = '1';
-              button.innerHTML =
-                '<span style="font-size:18px;line-height:1">⇩</span><span>Installa</span>';
-            };
-
-            const removeButton = () => button.remove();
-
-            const runPrompt = async () => {
-              if (!deferredPrompt) return false;
-
-              const promptEvent = deferredPrompt;
-              deferredPrompt = null;
-              pendingClick = false;
-              if (pendingTimer) clearTimeout(pendingTimer);
-
-              button.disabled = true;
-              button.innerHTML =
-                '<span style="font-size:18px;line-height:1">⇩</span><span>Apertura…</span>';
-
-              try {
-                await promptEvent.prompt();
-                const choice = await promptEvent.userChoice;
-                if (!choice || choice.outcome === 'dismissed') {
-                  resetButton();
-                }
-                return true;
-              } catch (_) {
-                resetButton();
-                return false;
-              }
-            };
-
-            document.body.appendChild(button);
-
-            if (isIOS) {
-              button.onclick = () => {
-                alert(
-                  'Per installare Scorta doTERRA su iPhone:\n\n' +
-                  'Safari → Condividi → Aggiungi alla schermata Home → Aggiungi'
-                );
-              };
-              return;
-            }
-
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.register(
-                'flutter_service_worker.js?v=scorta-pwa-v7',
-                { scope: './' }
-              ).then(() => navigator.serviceWorker.ready)
-               .then(() => {
-                 if (
-                   !navigator.serviceWorker.controller &&
-                   sessionStorage.getItem('scorta-sw-reload-v7') !== '1'
-                 ) {
-                   sessionStorage.setItem('scorta-sw-reload-v7', '1');
-                   location.reload();
-                 }
-               })
-               .catch(() => {});
-            }
-
-            button.onclick = async () => {
-              if (deferredPrompt) {
-                await runPrompt();
-                return;
-              }
-
-              pendingClick = true;
-              button.disabled = true;
-              button.style.opacity = '0.78';
-              button.innerHTML =
-                '<span style="font-size:18px;line-height:1">⇩</span><span>Preparazione…</span>';
-
-              pendingTimer = setTimeout(() => {
-                pendingClick = false;
-                resetButton();
-              }, 4500);
-            };
-
-            window.addEventListener('beforeinstallprompt', async (event) => {
-              event.preventDefault();
-              deferredPrompt = event;
-
-              if (pendingClick) {
-                await runPrompt();
-              } else {
-                resetButton();
-              }
-            });
-
-            window.addEventListener('appinstalled', removeButton);
-          })();
-          EOF
-
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("site/app-v6/index.html")
-          s = p.read_text(encoding="utf-8")
-          s = s.replace(
-              '<base href="/scorta-doterra-download/app/">',
-              '<base href="/scorta-doterra-download/app-v6/">'
-          )
-          marker = '<script src="flutter_bootstrap.js" async></script>'
-          if '<script src="install-helper-v6.js"></script>' not in s:
-              s = s.replace(marker, '<script src="install-helper-v6.js"></script>\n  ' + marker)
-          p.write_text(s, encoding="utf-8")
+          m=Path('site/app-v6/manifest.json')
+          if m.exists():
+              x=m.read_text(encoding='utf-8').replace('/scorta-doterra-download/app/','/scorta-doterra-download/app-v6/')
+              m.write_text(x,encoding='utf-8')
           PY
 
           cat > site/app-v6/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME = 'scorta-doterra-pwa-v7';
-
+          const CACHE_NAME = 'scorta-doterra-pwa-v8';
           self.addEventListener('install', (event) => {
-            event.waitUntil(
-              caches.open(CACHE_NAME)
-                .then((cache) => cache.addAll([
-                  './',
-                  './index.html',
-                  './manifest.json',
-                  './icons/Icon-192.png',
-                  './icons/Icon-512.png'
-                ]))
-                .then(() => self.skipWaiting())
-            );
+            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll([
+              './','./index.html','./manifest.json','./scorta-enhancements-v2.js','./icons/Icon-192.png','./icons/Icon-512.png'
+            ])).then(() => self.skipWaiting()));
           });
-
           self.addEventListener('activate', (event) => {
-            event.waitUntil(
-              caches.keys()
-                .then((keys) => Promise.all(
-                  keys
-                    .filter((key) => key !== CACHE_NAME)
-                    .map((key) => caches.delete(key))
-                ))
-                .then(() => self.clients.claim())
-            );
+            event.waitUntil(caches.keys().then((keys) => Promise.all(
+              keys.filter((key) => key.startsWith('scorta-doterra-') && key !== CACHE_NAME).map((key) => caches.delete(key))
+            )).then(() => self.clients.claim()));
           });
-
           self.addEventListener('fetch', (event) => {
             if (event.request.method !== 'GET') return;
-
-            event.respondWith(
-              fetch(event.request)
-                .then((response) => {
-                  if (
-                    response &&
-                    response.ok &&
-                    event.request.url.startsWith(self.location.origin)
-                  ) {
-                    const copy = response.clone();
-                    caches.open(CACHE_NAME)
-                      .then((cache) => cache.put(event.request, copy))
-                      .catch(() => {});
-                  }
-                  return response;
-                })
-                .catch(() => caches.match(event.request))
-            );
+            event.respondWith(fetch(event.request).then((response) => {
+              if (response && response.ok && event.request.url.startsWith(self.location.origin)) {
+                const copy=response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request,copy)).catch(() => {});
+              }
+              return response;
+            }).catch(() => caches.match(event.request)));
           });
           EOF
 
           python3 - <<'PY'
           from pathlib import Path
           import re
-
-          p = Path("site/app-v6/flutter_bootstrap.js")
-          s = p.read_text(encoding="utf-8")
-          s, n = re.subn(
-              r'serviceWorkerVersion:\s*"[^"]+"',
-              'serviceWorkerVersion: "scorta-pwa-v7"',
-              s,
-              count=1
-          )
+          p=Path('site/app-v6/flutter_bootstrap.js')
+          s=p.read_text(encoding='utf-8')
+          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v8"',s,count=1)
           if n != 1:
-              raise SystemExit("serviceWorkerVersion non trovato nel bootstrap")
-          p.write_text(s, encoding="utf-8")
+              raise SystemExit('serviceWorkerVersion non trovato')
+          p.write_text(s,encoding='utf-8')
           PY
 
-          test -s site/app-v6/flutter_service_worker.js
-          grep -q "self.clients.claim" site/app-v6/flutter_service_worker.js
-          grep -q 'serviceWorkerVersion: "scorta-pwa-v7"' site/app-v6/flutter_bootstrap.js
-
-          # Versione protetta con licenza personale.
           rm -rf site/app-v7
           cp -R site/app-v6 site/app-v7
+          cp app-enhancements/license-gate-v1.js site/app-v7/license-gate-v1.js
 
           python3 - <<'PY'
           from pathlib import Path
+          p=Path('site/app-v7/index.html')
+          s=p.read_text(encoding='utf-8').replace('/scorta-doterra-download/app-v6/','/scorta-doterra-download/app-v7/')
+          marker='<script src="flutter_bootstrap.js" async></script>'
+          if marker not in s:
+              raise SystemExit('bootstrap app-v7 non trovato')
+          s=s.replace(marker,'<script src="license-gate-v1.js"></script>',1)
+          p.write_text(s,encoding='utf-8')
 
-          # Manifest: la PWA protetta ha un proprio scope.
-          p = Path("site/app-v7/manifest.json")
-          s = p.read_text(encoding="utf-8").replace(
-              "/scorta-doterra-download/app-v6/",
-              "/scorta-doterra-download/app-v7/"
-          )
-          p.write_text(s, encoding="utf-8")
+          m=Path('site/app-v7/manifest.json')
+          if m.exists():
+              x=m.read_text(encoding='utf-8').replace('/scorta-doterra-download/app-v6/','/scorta-doterra-download/app-v7/')
+              m.write_text(x,encoding='utf-8')
 
-          # Base href e bootstrap: prima passa dalla schermata di attivazione.
-          p = Path("site/app-v7/index.html")
-          s = p.read_text(encoding="utf-8").replace(
-              "/scorta-doterra-download/app-v6/",
-              "/scorta-doterra-download/app-v7/"
-          )
-          old = '<script src="install-helper-v6.js"></script>\n  <script src="flutter_bootstrap.js" async></script>'
-          if old not in s:
-              raise SystemExit("Bootstrap app-v6 non trovato")
-          s = s.replace(old, '<script src="license-gate-v1.js"></script>')
-          p.write_text(s, encoding="utf-8")
-
-          # Cache separata dalla versione non protetta.
-          p = Path("site/app-v7/flutter_service_worker.js")
-          s = p.read_text(encoding="utf-8").replace(
-              "scorta-doterra-pwa-v7",
-              "scorta-doterra-license-v1"
-          )
-          p.write_text(s, encoding="utf-8")
+          sw=Path('site/app-v7/flutter_service_worker.js')
+          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v8','scorta-doterra-license-v2')
+          sw.write_text(x,encoding='utf-8')
           PY
 
-          cat > site/app-v7/license-gate-v1.js <<'EOF'
-          (() => {
-            const STORAGE_DEVICE = 'scorta_device_v1';
-            const STORAGE_LICENSE = 'scorta_license_v1';
+          grep -q 'scorta-enhancements-v2.js' site/app-v6/index.html
+          grep -q 'scorta-enhancements-v2.js' site/app-v7/index.html
+          grep -q 'license-gate-v1.js' site/app-v7/index.html
+          grep -q 'serviceWorkerVersion: "scorta-pwa-v8"' site/app-v6/flutter_bootstrap.js
 
-            const PUBLIC_KEY = {
-              kty: 'EC',
-              crv: 'P-256',
-              x: 'Xa0H5ejudFOzEo6gqBxWOSJw6nclum_AgreusvTe1QI',
-              y: '8xc9EzI8GqOtzEqBID-Ux9mkGIyIwMG4043jHxOJbBM',
-              ext: true
-            };
-
-            const enc = new TextEncoder();
-
-            const b64urlToBytes = (value) => {
-              let s = value.replace(/-/g, '+').replace(/_/g, '/');
-              while (s.length % 4) s += '=';
-              const raw = atob(s);
-              return Uint8Array.from(raw, c => c.charCodeAt(0));
-            };
-
-            const normalizeDevice = (value) =>
-              (value || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-
-            const formatDevice = (value) =>
-              normalizeDevice(value).match(/.{1,4}/g)?.join('-') || value;
-
-            const getDevice = () => {
-              let value = normalizeDevice(localStorage.getItem(STORAGE_DEVICE));
-              if (value.length >= 16) return value;
-
-              const bytes = new Uint8Array(8);
-              crypto.getRandomValues(bytes);
-              value = Array.from(bytes)
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('')
-                .toUpperCase();
-              localStorage.setItem(STORAGE_DEVICE, value);
-              return value;
-            };
-
-            const verifyLicense = async (license, device) => {
-              try {
-                const parts = (license || '').trim().split('.');
-                if (parts.length !== 3 || parts[0] !== 'SC1') return false;
-
-                const licenseId = parts[1].trim().toUpperCase();
-                if (!/^[A-Z0-9_-]{6,40}$/.test(licenseId)) return false;
-
-                const signature = b64urlToBytes(parts[2]);
-                const key = await crypto.subtle.importKey(
-                  'jwk',
-                  PUBLIC_KEY,
-                  { name: 'ECDSA', namedCurve: 'P-256' },
-                  false,
-                  ['verify']
-                );
-
-                const message = enc.encode(
-                  'SCORTA1|' + normalizeDevice(device) + '|' + licenseId
-                );
-
-                return await crypto.subtle.verify(
-                  { name: 'ECDSA', hash: 'SHA-256' },
-                  key,
-                  signature,
-                  message
-                );
-              } catch (_) {
-                return false;
-              }
-            };
-
-            const loadApp = () => {
-              const helper = document.createElement('script');
-              helper.src = 'install-helper-v6.js';
-              helper.onload = () => {
-                const flutter = document.createElement('script');
-                flutter.src = 'flutter_bootstrap.js';
-                flutter.async = true;
-                document.body.appendChild(flutter);
-              };
-              document.body.appendChild(helper);
-            };
-
-            const renderGate = (device) => {
-              document.body.innerHTML = `
-                <div id="licenseGate" style="min-height:100vh;background:#f7f5f7;color:#2d2630;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:22px;">
-                  <div style="width:min(100%,430px);background:#fff;border:1px solid #e9e4ea;border-radius:28px;padding:26px;box-shadow:0 18px 50px rgba(65,44,70,.12);">
-                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
-                      <img src="icons/Icon-192.png" alt="" style="width:64px;height:64px;border-radius:18px;display:block;">
-                      <div>
-                        <div style="font-size:25px;font-weight:900;letter-spacing:-.5px;">Scorta doTERRA</div>
-                        <div style="font-size:13px;color:#766f79;margin-top:3px;">Attivazione personale</div>
-                      </div>
-                    </div>
-
-                    <div style="font-size:18px;font-weight:850;margin-bottom:8px;">Attiva questo dispositivo</div>
-                    <div style="font-size:14px;line-height:1.55;color:#766f79;margin-bottom:18px;">
-                      Invia questo codice per ricevere la tua chiave personale. La chiave funzionerà solo su questo dispositivo.
-                    </div>
-
-                    <div style="background:#f2edf4;border-radius:18px;padding:15px;margin-bottom:12px;">
-                      <div style="font-size:11px;font-weight:800;color:#806b89;text-transform:uppercase;letter-spacing:.7px;">Codice dispositivo</div>
-                      <div id="deviceCode" style="font-size:20px;font-weight:900;letter-spacing:1px;margin-top:5px;word-break:break-word;">${formatDevice(device)}</div>
-                    </div>
-
-                    <button id="copyDevice" type="button" style="width:100%;border:1px solid #d9cfdd;background:#fff;color:#6e5578;border-radius:15px;padding:13px;font-size:14px;font-weight:850;margin-bottom:20px;">Copia codice dispositivo</button>
-
-                    <label for="licenseInput" style="display:block;font-size:12px;font-weight:850;margin-bottom:7px;">CHIAVE DI ATTIVAZIONE</label>
-                    <input id="licenseInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SC1.……" style="width:100%;border:1px solid #d9cfdd;border-radius:15px;padding:15px;font-size:14px;outline:none;margin-bottom:11px;">
-
-                    <div id="licenseError" style="display:none;color:#a33c45;background:#fff0f1;border-radius:13px;padding:10px 12px;font-size:13px;margin-bottom:11px;">Chiave non valida per questo dispositivo.</div>
-
-                    <button id="activateLicense" type="button" style="width:100%;border:0;background:#6e5578;color:#fff;border-radius:16px;padding:15px;font-size:15px;font-weight:900;">Attiva Scorta doTERRA</button>
-
-                    <div style="font-size:11px;color:#928a94;line-height:1.45;margin-top:16px;text-align:center;">
-                      La chiave viene richiesta solo alla prima attivazione su questo dispositivo.
-                    </div>
-                  </div>
-                </div>
-              `;
-
-              const copy = document.getElementById('copyDevice');
-              copy.addEventListener('click', async () => {
-                try {
-                  await navigator.clipboard.writeText(formatDevice(device));
-                  const old = copy.textContent;
-                  copy.textContent = 'Codice copiato ✓';
-                  setTimeout(() => copy.textContent = old, 1600);
-                } catch (_) {
-                  const range = document.createRange();
-                  range.selectNode(document.getElementById('deviceCode'));
-                  const sel = window.getSelection();
-                  sel.removeAllRanges();
-                  sel.addRange(range);
-                }
-              });
-
-              document.getElementById('activateLicense').addEventListener('click', async () => {
-                const input = document.getElementById('licenseInput');
-                const error = document.getElementById('licenseError');
-                const button = document.getElementById('activateLicense');
-                const license = input.value.trim();
-
-                error.style.display = 'none';
-                button.disabled = true;
-                button.textContent = 'Verifica…';
-
-                const ok = await verifyLicense(license, device);
-                if (ok) {
-                  localStorage.setItem(STORAGE_LICENSE, license);
-                  button.textContent = 'Attivata ✓';
-                  setTimeout(() => location.reload(), 350);
-                  return;
-                }
-
-                error.style.display = 'block';
-                button.disabled = false;
-                button.textContent = 'Attiva Scorta doTERRA';
-              });
-            };
-
-            const start = async () => {
-              const device = getDevice();
-              const saved = localStorage.getItem(STORAGE_LICENSE);
-
-              if (saved && await verifyLicense(saved, device)) {
-                loadApp();
-                return;
-              }
-
-              if (saved) localStorage.removeItem(STORAGE_LICENSE);
-              renderGate(device);
-            };
-
-            start();
-          })();
-          EOF
-
-          test -s site/app-v7/license-gate-v1.js
-          grep -q "Attiva questo dispositivo" site/app-v7/license-gate-v1.js
-          grep -q "/scorta-doterra-download/app-v7/" site/app-v7/manifest.json
-
-      - name: Mantieni pagina Ore
+      - name: Mantieni pagine e download esistenti
         run: |
           set -e
           if [ -d chiavi-scorta ]; then cp -R chiavi-scorta site/chiavi-scorta; fi
