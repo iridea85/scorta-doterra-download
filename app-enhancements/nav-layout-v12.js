@@ -1,39 +1,39 @@
 (() => {
   'use strict';
 
-  const STYLE_ID = 'scortaNavV13Style';
-  const TOOLS_ID = 'scortaToolsBottomV13';
+  const STYLE_ID = 'scortaNavV15Style';
+  const TOOLS_ID = 'scortaToolsBottomV15';
 
   function injectStyle(){
     if (document.getElementById(STYLE_ID)) return;
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
-      /* Nasconde il vecchio pulsante flottante Strumenti/Catalogo. */
+      /* Nasconde ogni vecchio pulsante flottante aggiunto in precedenza. */
       #scortaPlusFab{display:none!important}
 
-      /* Strumenti sostituisce visivamente Catalogo nella posizione centrale
-         della barra inferiore Flutter. */
+      /* Strumenti occupa stabilmente il terzo centrale della barra Flutter. */
       #${TOOLS_ID}{
-        position:fixed;
-        z-index:2147483050;
-        left:33.333vw;
-        bottom:0;
-        width:33.334vw;
-        height:calc(92px + env(safe-area-inset-bottom));
-        padding:10px 6px calc(9px + env(safe-area-inset-bottom));
-        border:0;
-        border-radius:0;
-        background:#f8eef7;
-        color:#4e4651;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        gap:5px;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+        position:fixed!important;
+        z-index:2147483646!important;
+        left:33.333vw!important;
+        right:auto!important;
+        bottom:0!important;
+        width:33.334vw!important;
+        height:calc(92px + env(safe-area-inset-bottom))!important;
+        padding:10px 6px calc(9px + env(safe-area-inset-bottom))!important;
+        border:0!important;
+        border-radius:0!important;
+        background:#f8eef7!important;
+        color:#4e4651!important;
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:center!important;
+        justify-content:center!important;
+        gap:5px!important;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;
         -webkit-tap-highlight-color:transparent;
-        box-shadow:none;
+        box-shadow:none!important;
       }
       #${TOOLS_ID} .ico{
         width:54px;
@@ -52,13 +52,20 @@
         font-weight:500;
         letter-spacing:.1px;
       }
-      #${TOOLS_ID}:active{background:#f1e5ef}
+      #${TOOLS_ID}:active{background:#f1e5ef!important}
 
-      /* Il pannello Strumenti non copre più la barra in basso.
-         Inventario · Strumenti · Spesa restano sempre visibili e cliccabili. */
+      /* Strumenti NON è più full-screen: termina esattamente sopra la barra.
+         In questo modo Inventario e Spesa del Flutter restano scoperti,
+         mentre il nostro tasto Strumenti resta sopra a entrambi. */
       #scortaPlusPanel{
-        z-index:2147483200!important;
+        position:fixed!important;
+        top:0!important;
+        left:0!important;
+        right:0!important;
         bottom:calc(92px + env(safe-area-inset-bottom))!important;
+        height:auto!important;
+        max-height:none!important;
+        z-index:2147483200!important;
       }
     `;
     document.head.appendChild(style);
@@ -69,9 +76,7 @@
   }
 
   function removeOldAddedButtons(){
-    document.getElementById('scortaCatalogFloatV12')?.remove();
-    document.getElementById('scortaToolsBottomV12')?.remove();
-    document.getElementById('scortaToolsNav')?.remove();
+    ['scortaCatalogFloatV12','scortaToolsBottomV12','scortaToolsBottomV13','scortaToolsNav'].forEach(id=>document.getElementById(id)?.remove());
   }
 
   function ensureTools(){
@@ -94,6 +99,7 @@
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ensureTools,{once:true});
   else ensureTools();
-  setTimeout(ensureTools,500);
-  setTimeout(ensureTools,1500);
+  setTimeout(ensureTools,250);
+  setTimeout(ensureTools,800);
+  setTimeout(ensureTools,1800);
 })();
