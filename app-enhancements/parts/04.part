@@ -1,0 +1,101 @@
+restoreBackupFile = async (file) => {
+    const text = await file.text();
+    let backup;
+    try { backup = JSON.parse(text); } catch (_) { throw new Error('File non valido'); }
+    if (backup?.format !== 'scorta-doterra-backup' || !backup.storage || typeof backup.storage !== 'object') {
+      throw new Error('Questo non è un backup Scorta doTERRA valido.');
+    }
+    if (!confirm(`Ripristinare il backup del ${formatDate(backup.createdAt, true)}? I dati attuali verranno sostituiti, mentre licenza e codice dispositivo resteranno invariati.`)) return;
+
+    const preserved = {};
+    LICENSE_KEYS.forEach((key) => { if (localStorage.getItem(key) != null) preserved[key] = localStorage.getItem(key); });
+
+    const currentKeys = [];
+    for (let i = 0; i < localStorage.length; i++) currentKeys.push(localStorage.key(i));
+    currentKeys.filter(Boolean).forEach((key) => {
+      if (LICENSE_KEYS.has(key)) return;
+      originalRemoveItem.call(localStorage, key);
+    });
+    Object.entries(backup.storage).forEach(([key, value]) => {
+      if (LICENSE_KEYS.has(key)) return;
+      originalSetItem.call(localStorage, key, String(value));
+    });
+    Object.entries(preserved).forEach(([key, value]) => originalSetItem.call(localStorage, key, value));
+    location.reload();
+  };
+
+  const renderData = () => {
+    const body = document.getElementById('scpBody');
+    body.innerHTML = `
+      <div class="scp-info"><b>Backup e ripristino</b><p>Il backup contiene inventario, quantità, lista della spesa, preferiti, date di apertura e cronologia. La licenza del dispositivo non viene esportata.</p></div>
+      <div class="scp-toolbar">
+        <button class="scp-btn primary" id="scpBackup">Crea backup</button>
+        <button class="scp-btn" id="scpRestore">Ripristina backup</button>
+      </div>
+      <input class="scp-file" id="scpRestoreFile" type="file" accept="application/json,.json">
+      <div class="scp-info"><b>Dove vengono salvati i dati?</b><p>Restano sul telefono/browser. Il file di backup ti permette di portarli su un altro dispositivo o recuperarli dopo una cancellazione dei dati.</p></div>
+    `;
+    document.getElementById('scpBackup').addEventListener('click', downloadBackup);
+    const input = document.getElementById('scpRestoreFile');
+    document.getElementById('scpRestore').addEventListener('click', () => input.click());
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try { await restoreBackupFile(file); }
+      catch (error) { alert(error.message || 'Impossibile ripristinare il backup.'); }
+    });
+  };
+
+  const renderInfo = () => {
+    const body = document.getElementById('scpBody');
+    body.innerHTML = `
+      <div class="scp-info">
+        <div class="scp-kv"><span>Versione app</span><b>${APP_VERSION}</b></div>
+        <div class="scp-kv"><span>Aggiornamento app</span><b>${BUILD_DATE}</b></div>
+        <div class="scp-kv"><span>Versione catalogo online</span><b>${esc(state.catalog?.catalogVersion || 'base')}</b></div>
+        <div class="scp-kv"><span>Ultimo aggiornamento catalogo</span><b>${formatDate(state.catalog?.updatedAt || '2026-09-05')}</b></div>
+      </div>
+      <div class="scp-info"><b>Catalogo centralizzato</b><p>L'app controlla il file catalogo online e usa gli aggiornamenti disponibili senza dover ricompilare la web app. Se sei offline usa l'ultima copia salvata.</p></div>
+      <div class="scp-info"><b>Licenze</b><p>Il sistema di attivazione attuale resta invariato. Il pannello licenze online con cliente, dispositivo, reset e disattivazione è predisposto come passaggio successivo quando l'app entrerà in vendita su scala più ampia.</p></div>
+      <div class="scp-info"><b>Dati</b><p>Inventario e preferenze restano locali sul dispositivo. Usa “Dati → Crea backup” prima di cambiare telefono o cancellare i dati del browser.</p></div>
+    `;
+  };
+
+  const renderCurrent = () => {
+    if (!document.getElementById('scpBody')) return;
+    switch (state.currentTab) {
+      case 'catalog': renderCatalog(); break;
+      case 'shopping': renderShopping(); break;
+      case 'history': renderHistory(); break;
+      case 'data': renderData(); break;
+      case 'info': renderInfo(); break;
+      default: renderHome();
+    }
+  };
+
+  const maybeShowFab = () => {
+    if (document.getElementById('licenseGate')) return false;
+    const appRoot = document.querySelector('flutter-view, flt-glass-pane, flt-scene-host, canvas');
+    if (!appRoot) return false;
+    renderFab();
+    return true;
+  };
+
+  const init = () => {
+    state.meta = loadMeta();
+    readInventory();
+    loadCatalog();
+    injectStyles();
+
+    if (maybeShowFab()) return;
+    const observer = new MutationObserver(() => {
+      if (maybeShowFab()) observer.disconnect();
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(() => maybeShowFab(), 8000);
+  };
+
+  window.scortaPlusOpen = openPanel;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
