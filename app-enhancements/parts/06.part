@@ -1,0 +1,160 @@
+
+(() => {
+  'use strict';
+
+  const INVENTORY_SUFFIX = 'doterra_inventory_v2';
+  const STYLE_ID = 'scortaStockNumberV1Style';
+
+  const escCss = (value) => {
+    if (window.CSS?.escape) return CSS.escape(String(value));
+    return String(value).replace(/(["\\])/g, '\\$1');
+  };
+
+  const decodeRaw = (raw) => {
+    if (raw == null || raw === '') return { data: [], wrapped: true };
+    try {
+      const first = JSON.parse(raw);
+      if (Array.isArray(first)) return { data: first, wrapped: false };
+      if (typeof first === 'string') {
+        const second = JSON.parse(first);
+        if (Array.isArray(second)) return { data: second, wrapped: true };
+      }
+    } catch (_) {}
+    return { data: [], wrapped: true };
+  };
+
+  const encodeLike = (raw, data) => {
+    const wrapped = decodeRaw(raw).wrapped;
+    const json = JSON.stringify(data);
+    return wrapped ? JSON.stringify(json) : json;
+  };
+
+  const inventoryKeys = () => {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.endsWith(INVENTORY_SUFFIX)) keys.push(key);
+    }
+    return keys;
+  };
+
+  const productKey = (product) => String(product?.id || product?.name || 'unknown');
+
+  const readProduct = (key) => {
+    for (const storageKey of inventoryKeys()) {
+      const list = decodeRaw(localStorage.getItem(storageKey)).data;
+      const found = (Array.isArray(list) ? list : []).find((p) => productKey(p) === key);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const saveStock = (key, value) => {
+    const next = Math.max(0, Math.floor(Number(value) || 0));
+    let changed = false;
+
+    for (const storageKey of inventoryKeys()) {
+      const raw = localStorage.getItem(storageKey);
+      const decoded = decodeRaw(raw);
+      if (!Array.isArray(decoded.data)) continue;
+      let touched = false;
+      const updated = decoded.data.map((product) => {
+        if (productKey(product) !== key) return product;
+        touched = true;
+        return { ...product, stock: next };
+      });
+      if (touched) {
+        localStorage.setItem(storageKey, encodeLike(raw, updated));
+        changed = true;
+      }
+    }
+
+    return changed ? next : null;
+  };
+
+  const injectStyle = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .scp-stock-editor{
+        display:flex;align-items:center;justify-content:space-between;gap:12px;
+        margin-top:11px;padding:10px 12px;border:1px solid #e2d8e5;border-radius:14px;background:#faf7fb
+      }
+      .scp-stock-editor label{font-size:12px;font-weight:850;color:#5f5662;line-height:1.2}
+      .scp-stock-editor label small{display:block;margin-top:2px;font-size:10px;font-weight:600;color:#8a818d}
+      .scp-stock-input{
+        width:72px;height:40px;border:1px solid #cfc2d4;border-radius:12px;background:#fff;color:#332d36;
+        text-align:center;font-size:18px;font-weight:900;outline:none;padding:4px 6px
+      }
+      .scp-stock-input:focus{border-color:#80658b;box-shadow:0 0 0 3px rgba(110,85,120,.10)}
+      .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button{opacity:1}
+      .scp-stock-saved{font-size:10px;color:#4d7048;font-weight:800;margin-left:auto}
+    `;
+    document.head.appendChild(style);
+  };
+
+  const decorateCard = (card) => {
+    if (!card || card.querySelector('.scp-stock-editor')) return;
+    const key = card.dataset.product;
+    if (!key) return;
+    const product = readProduct(key);
+    if (!product) return;
+
+    const editor = document.createElement('div');
+    editor.className = 'scp-stock-editor';
+    editor.innerHTML = `
+      <label>Scorta chiusa<small>Quante confezioni hai ancora da aprire</small></label>
+      <input class="scp-stock-input" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="${Math.max(0, Number(product.stock || 0))}" aria-label="Numero confezioni in scorta">
+    `;
+
+    const badges = card.querySelector('.scp-badges');
+    if (badges) badges.insertAdjacentElement('afterend', editor);
+    else card.appendChild(editor);
+
+    const input = editor.querySelector('.scp-stock-input');
+    let lastSaved = Math.max(0, Number(product.stock || 0));
+
+    const commit = () => {
+      const normalized = Math.max(0, Math.floor(Number(input.value) || 0));
+      input.value = String(normalized);
+      if (normalized === lastSaved) return;
+      const saved = saveStock(key, normalized);
+      if (saved == null) return;
+      lastSaved = saved;
+
+      const badge = card.querySelector('.scp-badge');
+      if (badge && /^Scorta\s/i.test(badge.textContent || '')) badge.textContent = `Scorta ${saved}`;
+
+      let note = editor.querySelector('.scp-stock-saved');
+      if (!note) {
+        note = document.createElement('span');
+        note.className = 'scp-stock-saved';
+        editor.insertBefore(note, input);
+      }
+      note.textContent = 'Salvato';
+      clearTimeout(editor._savedTimer);
+      editor._savedTimer = setTimeout(() => note?.remove(), 900);
+    };
+
+    input.addEventListener('change', commit);
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        commit();
+        input.blur();
+      }
+    });
+  };
+
+  const decorate = () => {
+    injectStyle();
+    document.querySelectorAll('#scortaPlusPanel [data-product]').forEach(decorateCard);
+  };
+
+  const observer = new MutationObserver(() => decorate());
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', decorate, { once: true });
+  else decorate();
+})();
