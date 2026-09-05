@@ -1,0 +1,384 @@
+=== FILES ===
+assets/AssetManifest.bin 2 bytes
+assets/AssetManifest.bin.json 6 bytes
+assets/FontManifest.json 82 bytes
+assets/NOTICES 1305028 bytes
+canvaskit/canvaskit.js 86987 bytes
+canvaskit/canvaskit.js.symbols 1356926 bytes
+canvaskit/canvaskit.wasm 7284602 bytes
+canvaskit/skwasm.js 63537 bytes
+canvaskit/skwasm.js.symbols 1540006 bytes
+canvaskit/skwasm.wasm 3593715 bytes
+canvaskit/skwasm_heavy.js 63650 bytes
+canvaskit/skwasm_heavy.js.symbols 1672152 bytes
+canvaskit/skwasm_heavy.wasm 5216217 bytes
+canvaskit/wimp.js 59127 bytes
+canvaskit/wimp.js.symbols 1813030 bytes
+canvaskit/wimp.wasm 3581677 bytes
+flutter.js 12136 bytes
+flutter_bootstrap.js 13093 bytes
+flutter_service_worker.js 784 bytes
+icons/Icon-192.png 1301 bytes
+icons/Icon-512.png 3547 bytes
+index.html 3627 bytes
+main.dart.js 2651120 bytes
+manifest.json 942 bytes
+version.json 98 bytes
+
+=== INDEX ===
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <base href="/scorta-doterra-download/app/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Scorta doTERRA - inventario personale, catalogo in italiano e lista della spesa.">
+  <meta name="theme-color" content="#6E5578">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Scorta doTERRA">
+  <meta name="application-name" content="Scorta doTERRA">
+
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="icons/Icon-192.png">
+  <link rel="manifest" href="manifest.json">
+
+  <title>Scorta doTERRA</title>
+</head>
+<body>
+  <script>
+    (() => {
+      const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+      if (standalone) return;
+
+      const ua = navigator.userAgent || '';
+      const isIOS =
+        /iPhone|iPad|iPod/i.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      let deferredPrompt = null;
+      let installButton = null;
+
+      const ensureButton = () => {
+        if (installButton) return installButton;
+
+        installButton = document.createElement('button');
+        installButton.type = 'button';
+        installButton.setAttribute('aria-label', 'Installa Scorta doTERRA');
+        installButton.innerHTML =
+          '<span style="font-size:18px;line-height:1">⇩</span><span>Installa</span>';
+
+        Object.assign(installButton.style, {
+          position: 'fixed',
+          top: 'calc(10px + env(safe-area-inset-top))',
+          right: '12px',
+          zIndex: '99999',
+          border: '1px solid rgba(110,85,120,.18)',
+          borderRadius: '14px',
+          padding: '9px 12px',
+          background: '#FFFFFF',
+          color: '#6E5578',
+          fontSize: '14px',
+          fontWeight: '800',
+          lineHeight: '1',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          boxShadow: '0 6px 18px rgba(50,34,56,.12)',
+          WebkitTapHighlightColor: 'transparent'
+        });
+
+        document.body.appendChild(installButton);
+        return installButton;
+      };
+
+      const removeButton = () => {
+        if (installButton) installButton.remove();
+        installButton = null;
+      };
+
+      if (isIOS) {
+        const button = ensureButton();
+        button.addEventListener('click', () => {
+          alert(
+            'Per installare Scorta doTERRA su iPhone:\n\n' +
+            '1. Apri questa pagina in Safari\n' +
+            '2. Tocca Condividi\n' +
+            '3. Tocca “Aggiungi alla schermata Home”\n' +
+            '4. Tocca Aggiungi'
+          );
+        });
+      }
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+
+        const button = ensureButton();
+        button.onclick = async () => {
+          if (!deferredPrompt) return;
+          button.disabled = true;
+          await deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          removeButton();
+        };
+      });
+
+      window.addEventListener('appinstalled', removeButton);
+    })();
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
+=== MAIN.DART.JS SEARCH ===
+size=2651120
+--- localStorage ---
+hits 3
+ s=1 break case 1:return A.O(q,r)}}) return A.P($async$adz,r)}, u8:function u8(a){this.a=a}, a7A:function a7A(){}, adx:function adx(){}, a9s:function a9s(a,b){this.a=a this.b=b}, a3A:function a3A(a){this.a=a}, aP4(a){var s=A.aJN(v.G.window.localStorage) return new A.aC(s,new A.arS(a),A.Z(s).i("aC<1>"))}, aOL(a){var s,r=null try{r=B.cp.hZ(a)}catch(s){if(A.ao(s) instanceof A.eZ)return null else throw s}if(t.j.b(r))return J.Hz(r,t.N) return r}, adv:function adv(){}, adw:function adw(a){this.a=a}, arS:function arS(a){this.a=a}, dK(){var s=new Float64Array(16) s[0]=1 s[5]=1 s[10]=1 s[15]=1 return new A.bm(s)}, mf(a,b,c){var s=new Float64Array(16),r=new A.bm
+
+, Z9(a){var s=0,r=A.Q(t.nf),q,p=this,o,n,m,l,k,j,i,h var $async$Bt=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:i=a.a h=A.r(t.N,t.K) for(o=p.a8h(i.a,i.b),n=J.bu(o.a),o=new A.qa(n,o.b),m=v.G;o.v();){l=n.gN() k=m.window.localStorage.getItem(l) k.toString j=A.aOL(k) if(j!=null)h.m(0,l,j)}q=h s=1 break case 1:return A.O(q,r)}}) return A.P($async$Bt,r)}, ni(a,b,c){return this.a_2(a,b,c)}, a_2(a,b,c){var s=0,r=A.Q(t.y),q var $async$ni=A.R(function(d,e){if(d===1)return A.N(e,r) for(;;)switch(s){case 0:v.G.window.localStorage.setItem(b,B.cp.Ht(c)) q=!0 s=1 break case 1:return A.O(q,r)}}) return A.P($async$ni,r)}, a8h(a,b){var s=A.aP4(b) r
+
+ull)h.m(0,l,j)}q=h s=1 break case 1:return A.O(q,r)}}) return A.P($async$Bt,r)}, ni(a,b,c){return this.a_2(a,b,c)}, a_2(a,b,c){var s=0,r=A.Q(t.y),q var $async$ni=A.R(function(d,e){if(d===1)return A.N(e,r) for(;;)switch(s){case 0:v.G.window.localStorage.setItem(b,B.cp.Ht(c)) q=!0 s=1 break case 1:return A.O(q,r)}}) return A.P($async$ni,r)}, a8h(a,b){var s=A.aP4(b) return new A.aC(s,new A.adw(a),s.$ti.i("aC<y.E>"))}} A.adw.prototype={ $1(a){return B.c.c7(a,this.a)}, $S:29} A.arS.prototype={ $1(a){return!0}, $S:29} A.oW.prototype={ cu(a){var s=a.a,r=this.a,q=s[8] r.$flags&2&&A.at(r) r[8]=q r[7]=s[7] r[6]=s[6] r[5]=s[5] r[4]=s[4] r[3]=s[3] r[2]=s[2] r[1]=s
+
+--- indexedDB ---
+hits 0
+--- shared_preferences ---
+hits 1
+"transparency") B.Mw=new A.L_(0,"none") B.Mx=new A.L_(2,"truncateAfterCompositionEnds") B.My=new A.L1(null,null) B.Mz=new A.zo(null) B.MA=new A.tm(null,null) B.MB=new A.h0("popRoute",null) B.cq=new A.ae9() B.v9=new A.tn("plugins.flutter.io/shared_preferences",B.cq) B.MC=new A.tn("flutter/service_worker",B.cq) B.dK=new A.L5(0,"latestPointer") B.l2=new A.L5(1,"averageBoundaryPointers") B.MD=new A.p2(0,"clipRect") B.ME=new A.p2(1,"clipRRect") B.MF=new A.p2(2,"clipPath") B.MG=new A.p2(3,"transform") B.MH=new A.p2(4,"opacity") B.ML=new A.tu(null,null,null,null,null,null,null,null,null,null,null,null) B.MM=new A.a84(0,"alwaysShow") B.Hj=new A.cp(B.ky,null,nu
+
+--- hive ---
+hits 0
+--- inventario ---
+hits 9
+,r)}}) return A.P($async$rC,r)}, p9(a){return this.a4g(a)}, a4g(a){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$p9=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(p.Ei(a)!=null){p.hN("Questo prodotto \xe8 gi\xe0 nel tuo inventario.") s=1 break}o=p.c o.toString s=3 return A.M(A.e4(o,!1).j2(A.a7g(new A.akk(a),null,t.bG)),$async$p9) case 3:n=c if(n==null){s=1 break}p.a5(new A.akl(p,n)) s=4 return A.M(p.fA(),$async$p9) case 4:p.hN("Prodotto aggiunto all'inventario.") case 1:return A.O(q,r)}}) return A.P($async$p9,r)}, rD(){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$rD=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:n=
+
+l tuo inventario.") s=1 break}o=p.c o.toString s=3 return A.M(A.e4(o,!1).j2(A.a7g(new A.akk(a),null,t.bG)),$async$p9) case 3:n=c if(n==null){s=1 break}p.a5(new A.akl(p,n)) s=4 return A.M(p.fA(),$async$p9) case 4:p.hN("Prodotto aggiunto all'inventario.") case 1:return A.O(q,r)}}) return A.P($async$p9,r)}, rD(){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$rD=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:n=p.c n.toString s=3 return A.M(A.e4(n,!1).j2(A.a7g(new A.aki(),null,t.bG)),$async$rD) case 3:o=b if(o==null){s=1 break}p.a5(new A.akj(p,o)) s=4 return A.M(p.fA(),$async$rD) case 4:p.hN("Prodotto doTERRA aggiunto.") case 1:return A.O(q,
+
+if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chiuse.") else p.hN("Finito. Quando apri il prossimo, segnalo dall'inventario.") case 1:return A.O(q,r)}}) return A.P($async$wC,r)}, nK(a,b,c){return this.agn(a,b,c)}, Rv(a,b){return this.nK(a,b,!1)}, agn(a,b,c){var s=0,r=A.Q(t.H),q,p=this,o var $async$nK=A.R(function(d,e){if(d===1)return A.N(e,r) for(;;)switch(s){case 0:p.a5(new A.alb(b,a)) s=3 return A.M(p.fA(),$async$nK) case 3:if(!c){s=1 break}o=a.b if(b<=0)p.hN(o+" tolto dalla lista della spesa.") else p.hN(o+" \u2022 quantit\x
+
+s,r,q,p,o,n,m=this,l=null,k=m.gRB().length,j=m.f if(j===0)s="Scorta doTERRA" else s=j===1?"Catalogo doTERRA":"Lista della spesa" s=A.c5(s,l,l,l,B.UW,l,l) j=j===1?B.i.k($.awU().length)+" prodotti \u2022 Italia \u2022 aggiornato 02/09/2026":"Inventario personale" r=t.p j=A.axk(A.iQ(A.c([s,A.c5(j,l,l,l,A.J(a).ok.Q,l,l)],r),B.bm,B.X,B.ar)) if(m.e)s=B.DF else{s=m.f s=A.ayY(B.cl,A.c([m.ac5(),m.a57(),m.ags()],r),s)}q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l p=m.f o=k>0 n=o?A.axp(B.oF,A.c5(B.i.k(k),l,l,l,l,l,l)):B.oF return A.aAz(j,s,new A.L9(p,A.c([B.MN,B.MO,new A.tv(n,o?A.axp(B.oB,A.c5(B.i.k(k),l,l,l,l,l,l)):B.oB,"Spesa",l)],r),new A.alm(m),l),q)},
+
+rodotto doTERRA",!1,null)}, $S:84} A.akC.prototype={ $1(a){return a.a===this.a.a}, $S:58} A.akD.prototype={ $0(){var s=this.c this.a.d[this.b]=s return s}, $S:0} A.akz.prototype={ $1(a){var s=null,r=A.c5(this.a.b+" verr\xe0 rimosso dal tuo inventario.",s,s,s,s,s,s) return A.axe(A.c([A.aeG(B.Au,new A.akx(a),s),A.ayw(B.At,new A.aky(a))],t.p),r,B.X_)}, $S:537} A.akx.prototype={ $0(){A.e4(this.a,!1).lq(!1) return null}, $S:0} A.aky.prototype={ $0(){A.e4(this.a,!1).lq(!0) return null}, $S:0} A.akA.prototype={ $0(){return B.b.e8(this.a.d,new A.akw(this.b))}, $S:0} A.akw.prototype={ $1(a){return a.a===this.a.a}, $S:58} A.akv.prototype={ $0(){var s=this.a s.e=
+
+i(a)!=null,o=a.b,n=A.yz(o==="Oli essenziali singoli"||o==="Miscele, Touch e aromaterapia"?B.ox:B.kx,B.dq,r),m=A.c5(a.a,r,r,r,B.fi,r,r) o=A.c5(o,r,r,r,r,r,r) s=A.c([],t.p) if(p)s.push(B.NT) else s.push(A.t_(B.eC,new A.akm(q,a),"Aggiungi all'inventario")) s.push(A.oA(r,r,r,B.oE,r,r,new A.akn(q,a),r,r,r,"Metti nella lista della spesa")) s=A.f3(s,B.a4,B.X,B.bS,0) q=p?r:new A.ako(q,a) return new A.bj(B.FW,A.lB(A.azp(!1,B.G6,r,r,!0,r,r,r,!0,r,new A.Ik(n,B.nx,r),r,r,r,r,q,!1,r,r,r,r,o,r,m,s,r),r),r)}, $S:546} A.akm.prototype={ $0(){return this.a.p9(this.b)}, $S:0} A.akn.prototype={ $0(){return this.a.rC(this.b)}, $S:0} A.ako.prototype={ $0(){return this.a.p9(
+
+,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.H2=new A.c3(983357,"MaterialIcons",!1) B.oD=new A.cp(B.H2,null,null,null,null) B.Hu=new A.fs(null,null,null,null,null,null,null,null,null,null,"Cerca nel tuo inventario...",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.oD,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hv=new A.fs(null,null,null,"Note (facoltative)",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,nul
+
+,"clipPath") B.MG=new A.p2(3,"transform") B.MH=new A.p2(4,"opacity") B.ML=new A.tu(null,null,null,null,null,null,null,null,null,null,null,null) B.MM=new A.a84(0,"alwaysShow") B.Hj=new A.cp(B.ky,null,null,null,null) B.MN=new A.tv(B.oA,B.Hj,"Inventario",null) B.GS=new A.c3(61655,"MaterialIcons",!1) B.Hg=new A.cp(B.GS,null,null,null,null) B.GY=new A.c3(63428,"MaterialIcons",!1) B.Hc=new A.cp(B.GY,null,null,null,null) B.MO=new A.tv(B.Hg,B.Hc,"Catalogo",null) B.MP=new A.zC(null,null,null,null,null,null,null,null,null,null) B.dL=new A.Lb(0,"traditional") B.hA=new A.Lb(1,"directional") B.MQ=new A.kq(!0) B.MR=new A.zD(null,null,null,null,null,null,null,null,nu
+
+=new A.cb("Gestisci aperto / chiuso",null,B.fi,null,null,null,null,null,null) B.W3=new A.k(!0,null,null,null,null,null,24,B.bt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,null,null,null) B.WM=new A.cb("Scegli dal catalogo",null,null,null,null,null,null,null,null) B.WN=new A.cb("Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,nu
+
+--- Inventario ---
+hits 9
+,r)}}) return A.P($async$rC,r)}, p9(a){return this.a4g(a)}, a4g(a){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$p9=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(p.Ei(a)!=null){p.hN("Questo prodotto \xe8 gi\xe0 nel tuo inventario.") s=1 break}o=p.c o.toString s=3 return A.M(A.e4(o,!1).j2(A.a7g(new A.akk(a),null,t.bG)),$async$p9) case 3:n=c if(n==null){s=1 break}p.a5(new A.akl(p,n)) s=4 return A.M(p.fA(),$async$p9) case 4:p.hN("Prodotto aggiunto all'inventario.") case 1:return A.O(q,r)}}) return A.P($async$p9,r)}, rD(){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$rD=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:n=
+
+l tuo inventario.") s=1 break}o=p.c o.toString s=3 return A.M(A.e4(o,!1).j2(A.a7g(new A.akk(a),null,t.bG)),$async$p9) case 3:n=c if(n==null){s=1 break}p.a5(new A.akl(p,n)) s=4 return A.M(p.fA(),$async$p9) case 4:p.hN("Prodotto aggiunto all'inventario.") case 1:return A.O(q,r)}}) return A.P($async$p9,r)}, rD(){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$rD=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:n=p.c n.toString s=3 return A.M(A.e4(n,!1).j2(A.a7g(new A.aki(),null,t.bG)),$async$rD) case 3:o=b if(o==null){s=1 break}p.a5(new A.akj(p,o)) s=4 return A.M(p.fA(),$async$rD) case 4:p.hN("Prodotto doTERRA aggiunto.") case 1:return A.O(q,
+
+if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chiuse.") else p.hN("Finito. Quando apri il prossimo, segnalo dall'inventario.") case 1:return A.O(q,r)}}) return A.P($async$wC,r)}, nK(a,b,c){return this.agn(a,b,c)}, Rv(a,b){return this.nK(a,b,!1)}, agn(a,b,c){var s=0,r=A.Q(t.H),q,p=this,o var $async$nK=A.R(function(d,e){if(d===1)return A.N(e,r) for(;;)switch(s){case 0:p.a5(new A.alb(b,a)) s=3 return A.M(p.fA(),$async$nK) case 3:if(!c){s=1 break}o=a.b if(b<=0)p.hN(o+" tolto dalla lista della spesa.") else p.hN(o+" \u2022 quantit\x
+
+s,r,q,p,o,n,m=this,l=null,k=m.gRB().length,j=m.f if(j===0)s="Scorta doTERRA" else s=j===1?"Catalogo doTERRA":"Lista della spesa" s=A.c5(s,l,l,l,B.UW,l,l) j=j===1?B.i.k($.awU().length)+" prodotti \u2022 Italia \u2022 aggiornato 02/09/2026":"Inventario personale" r=t.p j=A.axk(A.iQ(A.c([s,A.c5(j,l,l,l,A.J(a).ok.Q,l,l)],r),B.bm,B.X,B.ar)) if(m.e)s=B.DF else{s=m.f s=A.ayY(B.cl,A.c([m.ac5(),m.a57(),m.ags()],r),s)}q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l p=m.f o=k>0 n=o?A.axp(B.oF,A.c5(B.i.k(k),l,l,l,l,l,l)):B.oF return A.aAz(j,s,new A.L9(p,A.c([B.MN,B.MO,new A.tv(n,o?A.axp(B.oB,A.c5(B.i.k(k),l,l,l,l,l,l)):B.oB,"Spesa",l)],r),new A.alm(m),l),q)},
+
+rodotto doTERRA",!1,null)}, $S:84} A.akC.prototype={ $1(a){return a.a===this.a.a}, $S:58} A.akD.prototype={ $0(){var s=this.c this.a.d[this.b]=s return s}, $S:0} A.akz.prototype={ $1(a){var s=null,r=A.c5(this.a.b+" verr\xe0 rimosso dal tuo inventario.",s,s,s,s,s,s) return A.axe(A.c([A.aeG(B.Au,new A.akx(a),s),A.ayw(B.At,new A.aky(a))],t.p),r,B.X_)}, $S:537} A.akx.prototype={ $0(){A.e4(this.a,!1).lq(!1) return null}, $S:0} A.aky.prototype={ $0(){A.e4(this.a,!1).lq(!0) return null}, $S:0} A.akA.prototype={ $0(){return B.b.e8(this.a.d,new A.akw(this.b))}, $S:0} A.akw.prototype={ $1(a){return a.a===this.a.a}, $S:58} A.akv.prototype={ $0(){var s=this.a s.e=
+
+i(a)!=null,o=a.b,n=A.yz(o==="Oli essenziali singoli"||o==="Miscele, Touch e aromaterapia"?B.ox:B.kx,B.dq,r),m=A.c5(a.a,r,r,r,B.fi,r,r) o=A.c5(o,r,r,r,r,r,r) s=A.c([],t.p) if(p)s.push(B.NT) else s.push(A.t_(B.eC,new A.akm(q,a),"Aggiungi all'inventario")) s.push(A.oA(r,r,r,B.oE,r,r,new A.akn(q,a),r,r,r,"Metti nella lista della spesa")) s=A.f3(s,B.a4,B.X,B.bS,0) q=p?r:new A.ako(q,a) return new A.bj(B.FW,A.lB(A.azp(!1,B.G6,r,r,!0,r,r,r,!0,r,new A.Ik(n,B.nx,r),r,r,r,r,q,!1,r,r,r,r,o,r,m,s,r),r),r)}, $S:546} A.akm.prototype={ $0(){return this.a.p9(this.b)}, $S:0} A.akn.prototype={ $0(){return this.a.rC(this.b)}, $S:0} A.ako.prototype={ $0(){return this.a.p9(
+
+,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.H2=new A.c3(983357,"MaterialIcons",!1) B.oD=new A.cp(B.H2,null,null,null,null) B.Hu=new A.fs(null,null,null,null,null,null,null,null,null,null,"Cerca nel tuo inventario...",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.oD,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hv=new A.fs(null,null,null,"Note (facoltative)",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,nul
+
+,"clipPath") B.MG=new A.p2(3,"transform") B.MH=new A.p2(4,"opacity") B.ML=new A.tu(null,null,null,null,null,null,null,null,null,null,null,null) B.MM=new A.a84(0,"alwaysShow") B.Hj=new A.cp(B.ky,null,null,null,null) B.MN=new A.tv(B.oA,B.Hj,"Inventario",null) B.GS=new A.c3(61655,"MaterialIcons",!1) B.Hg=new A.cp(B.GS,null,null,null,null) B.GY=new A.c3(63428,"MaterialIcons",!1) B.Hc=new A.cp(B.GY,null,null,null,null) B.MO=new A.tv(B.Hg,B.Hc,"Catalogo",null) B.MP=new A.zC(null,null,null,null,null,null,null,null,null,null) B.dL=new A.Lb(0,"traditional") B.hA=new A.Lb(1,"directional") B.MQ=new A.kq(!0) B.MR=new A.zD(null,null,null,null,null,null,null,null,nu
+
+=new A.cb("Gestisci aperto / chiuso",null,B.fi,null,null,null,null,null,null) B.W3=new A.k(!0,null,null,null,null,null,24,B.bt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,null,null,null) B.WM=new A.cb("Scegli dal catalogo",null,null,null,null,null,null,null,null) B.WN=new A.cb("Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,nu
+
+--- lista della spesa ---
+hits 7
+))) s=1 break case 4:o=B.i.k(1000*Date.now()) n=a.a m=a.b p.a5(new A.akh(p,new A.ds(o,n,m,"",0,!1,m==="Oli essenziali singoli"||m==="Miscele, Touch e aromaterapia",0,1,!1,""))) s=6 return A.M(p.fA(),$async$rC) case 6:p.hN(n+" aggiunto alla lista della spesa.") case 1:return A.O(q,r)}}) return A.P($async$rC,r)}, p9(a){return this.a4g(a)}, a4g(a){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$p9=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(p.Ei(a)!=null){p.hN("Questo prodotto \xe8 gi\xe0 nel tuo inventario.") s=1 break}o=p.c o.toString s=3 return A.M(A.e4(o,!1).j2(A.a7g(new A.akk(a),null,t.bG)),$async$p9) case 3:n=c if(n==null){s=1 b
+
+p.hN("Hai gi\xe0 una confezione segnata come aperta.") s=1 break}if(a.e<=0){p.hN("Non hai scorte chiuse da aprire.") s=1 break}p.a5(new A.al9(a)) s=3 return A.M(p.fA(),$async$xl) case 3:if(a.gh4()>0)p.hN("Aperto. "+a.b+" \xe8 entrato nella lista della spesa.") else p.hN("Aperto. Scorta aggiornata.") case 1:return A.O(q,r)}}) return A.P($async$xl,r)}, wC(a){return this.a7z(a)}, a7z(a){var s=0,r=A.Q(t.H),q,p=this var $async$wC=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chiuse.") else p.hN("Finito. Quando apri
+
+1)}, agn(a,b,c){var s=0,r=A.Q(t.H),q,p=this,o var $async$nK=A.R(function(d,e){if(d===1)return A.N(e,r) for(;;)switch(s){case 0:p.a5(new A.alb(b,a)) s=3 return A.M(p.fA(),$async$nK) case 3:if(!c){s=1 break}o=a.b if(b<=0)p.hN(o+" tolto dalla lista della spesa.") else p.hN(o+" \u2022 quantit\xe0 da comprare: "+B.i.k(a.gh4())) case 1:return A.O(q,r)}}) return A.P($async$nK,r)}, wi(a){return this.a4o(a)}, a4o(a){var s=0,r=A.Q(t.H),q=this,p var $async$wi=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:p=a.gh4() s=2 return A.M(q.nK(a,p>0?p+1:1,!0),$async$wi) case 2:return A.O(null,r)}}) return A.P($async$wi,r)}, pj(a){return this.a6e(a)}, a
+
+B.c.dZ(this.w),r=$.awU(),q=A.Z(r).i("aC<1>") s=A.a2(new A.aC(r,new A.akE(this,s.toLowerCase()),q),q.i("y.E")) return s}, G(a){var s,r,q,p,o,n,m=this,l=null,k=m.gRB().length,j=m.f if(j===0)s="Scorta doTERRA" else s=j===1?"Catalogo doTERRA":"Lista della spesa" s=A.c5(s,l,l,l,B.UW,l,l) j=j===1?B.i.k($.awU().length)+" prodotti \u2022 Italia \u2022 aggiornato 02/09/2026":"Inventario personale" r=t.p j=A.axk(A.iQ(A.c([s,A.c5(j,l,l,l,A.J(a).ok.Q,l,l)],r),B.bm,B.X,B.ar)) if(m.e)s=B.DF else{s=m.f s=A.ayY(B.cl,A.c([m.ac5(),m.a57(),m.ags()],r),s)}q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l p=m.f o=k>0 n=o?A.axp(B.oF,A.c5(B.i.k(k),l,l,l,l,l,l)):B.oF retur
+
+ aromaterapia"?B.ox:B.kx,B.dq,r),m=A.c5(a.a,r,r,r,B.fi,r,r) o=A.c5(o,r,r,r,r,r,r) s=A.c([],t.p) if(p)s.push(B.NT) else s.push(A.t_(B.eC,new A.akm(q,a),"Aggiungi all'inventario")) s.push(A.oA(r,r,r,B.oE,r,r,new A.akn(q,a),r,r,r,"Metti nella lista della spesa")) s=A.f3(s,B.a4,B.X,B.bS,0) q=p?r:new A.ako(q,a) return new A.bj(B.FW,A.lB(A.azp(!1,B.G6,r,r,!0,r,r,r,!0,r,new A.Ik(n,B.nx,r),r,r,r,r,q,!1,r,r,r,r,o,r,m,s,r),r),r)}, $S:546} A.akm.prototype={ $0(){return this.a.p9(this.b)}, $S:0} A.akn.prototype={ $0(){return this.a.rC(this.b)}, $S:0} A.ako.prototype={ $0(){return this.a.p9(this.b)}, $S:0} A.alg.prototype={ $1(a){var s=null,r=t.p,q=this.a,p=A.f3(A.
+
+,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hw=new A.fs(null,null,null,"Scorta minima",null,null,null,"Sotto questo numero il prodotto entra nella lista della spesa.",null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hx=new A.fs(null,null,null,null,null,null,null,null,null,null,"Cerca nel catalogo doTERRA...",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,nu
+
+ew A.cb("Scegli dal catalogo",null,null,null,null,null,null,null,null) B.WN=new A.cb("Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,null,null,null,null,null) B.Au=new A.cb("Annulla",null,null,null,null,null,null,null,null) B.WQ=new A.cb("Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e Touch possono essere gestiti anche come aperti/chiusi.",null,B.lR,B.cd,null,null,null,null,null) B.WS=new A.cb("Salva",null,null,null,null,null,null,null,null) B.WT=new A.cb("Aggiorna scorta",null,null,null,null,null,nu
+
+--- Lista della spesa ---
+hits 7
+))) s=1 break case 4:o=B.i.k(1000*Date.now()) n=a.a m=a.b p.a5(new A.akh(p,new A.ds(o,n,m,"",0,!1,m==="Oli essenziali singoli"||m==="Miscele, Touch e aromaterapia",0,1,!1,""))) s=6 return A.M(p.fA(),$async$rC) case 6:p.hN(n+" aggiunto alla lista della spesa.") case 1:return A.O(q,r)}}) return A.P($async$rC,r)}, p9(a){return this.a4g(a)}, a4g(a){var s=0,r=A.Q(t.H),q,p=this,o,n var $async$p9=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(p.Ei(a)!=null){p.hN("Questo prodotto \xe8 gi\xe0 nel tuo inventario.") s=1 break}o=p.c o.toString s=3 return A.M(A.e4(o,!1).j2(A.a7g(new A.akk(a),null,t.bG)),$async$p9) case 3:n=c if(n==null){s=1 b
+
+p.hN("Hai gi\xe0 una confezione segnata come aperta.") s=1 break}if(a.e<=0){p.hN("Non hai scorte chiuse da aprire.") s=1 break}p.a5(new A.al9(a)) s=3 return A.M(p.fA(),$async$xl) case 3:if(a.gh4()>0)p.hN("Aperto. "+a.b+" \xe8 entrato nella lista della spesa.") else p.hN("Aperto. Scorta aggiornata.") case 1:return A.O(q,r)}}) return A.P($async$xl,r)}, wC(a){return this.a7z(a)}, a7z(a){var s=0,r=A.Q(t.H),q,p=this var $async$wC=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chiuse.") else p.hN("Finito. Quando apri
+
+1)}, agn(a,b,c){var s=0,r=A.Q(t.H),q,p=this,o var $async$nK=A.R(function(d,e){if(d===1)return A.N(e,r) for(;;)switch(s){case 0:p.a5(new A.alb(b,a)) s=3 return A.M(p.fA(),$async$nK) case 3:if(!c){s=1 break}o=a.b if(b<=0)p.hN(o+" tolto dalla lista della spesa.") else p.hN(o+" \u2022 quantit\xe0 da comprare: "+B.i.k(a.gh4())) case 1:return A.O(q,r)}}) return A.P($async$nK,r)}, wi(a){return this.a4o(a)}, a4o(a){var s=0,r=A.Q(t.H),q=this,p var $async$wi=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:p=a.gh4() s=2 return A.M(q.nK(a,p>0?p+1:1,!0),$async$wi) case 2:return A.O(null,r)}}) return A.P($async$wi,r)}, pj(a){return this.a6e(a)}, a
+
+B.c.dZ(this.w),r=$.awU(),q=A.Z(r).i("aC<1>") s=A.a2(new A.aC(r,new A.akE(this,s.toLowerCase()),q),q.i("y.E")) return s}, G(a){var s,r,q,p,o,n,m=this,l=null,k=m.gRB().length,j=m.f if(j===0)s="Scorta doTERRA" else s=j===1?"Catalogo doTERRA":"Lista della spesa" s=A.c5(s,l,l,l,B.UW,l,l) j=j===1?B.i.k($.awU().length)+" prodotti \u2022 Italia \u2022 aggiornato 02/09/2026":"Inventario personale" r=t.p j=A.axk(A.iQ(A.c([s,A.c5(j,l,l,l,A.J(a).ok.Q,l,l)],r),B.bm,B.X,B.ar)) if(m.e)s=B.DF else{s=m.f s=A.ayY(B.cl,A.c([m.ac5(),m.a57(),m.ags()],r),s)}q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l p=m.f o=k>0 n=o?A.axp(B.oF,A.c5(B.i.k(k),l,l,l,l,l,l)):B.oF retur
+
+ aromaterapia"?B.ox:B.kx,B.dq,r),m=A.c5(a.a,r,r,r,B.fi,r,r) o=A.c5(o,r,r,r,r,r,r) s=A.c([],t.p) if(p)s.push(B.NT) else s.push(A.t_(B.eC,new A.akm(q,a),"Aggiungi all'inventario")) s.push(A.oA(r,r,r,B.oE,r,r,new A.akn(q,a),r,r,r,"Metti nella lista della spesa")) s=A.f3(s,B.a4,B.X,B.bS,0) q=p?r:new A.ako(q,a) return new A.bj(B.FW,A.lB(A.azp(!1,B.G6,r,r,!0,r,r,r,!0,r,new A.Ik(n,B.nx,r),r,r,r,r,q,!1,r,r,r,r,o,r,m,s,r),r),r)}, $S:546} A.akm.prototype={ $0(){return this.a.p9(this.b)}, $S:0} A.akn.prototype={ $0(){return this.a.rC(this.b)}, $S:0} A.ako.prototype={ $0(){return this.a.p9(this.b)}, $S:0} A.alg.prototype={ $1(a){var s=null,r=t.p,q=this.a,p=A.f3(A.
+
+,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hw=new A.fs(null,null,null,"Scorta minima",null,null,null,"Sotto questo numero il prodotto entra nella lista della spesa.",null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hx=new A.fs(null,null,null,null,null,null,null,null,null,null,"Cerca nel catalogo doTERRA...",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,nu
+
+ew A.cb("Scegli dal catalogo",null,null,null,null,null,null,null,null) B.WN=new A.cb("Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,null,null,null,null,null) B.Au=new A.cb("Annulla",null,null,null,null,null,null,null,null) B.WQ=new A.cb("Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e Touch possono essere gestiti anche come aperti/chiusi.",null,B.lR,B.cd,null,null,null,null,null) B.WS=new A.cb("Salva",null,null,null,null,null,null,null,null) B.WT=new A.cb("Aggiorna scorta",null,null,null,null,null,nu
+
+--- catalogo ---
+hits 8
+n q}, ga7m(){var s=B.c.dZ(this.w),r=$.awU(),q=A.Z(r).i("aC<1>") s=A.a2(new A.aC(r,new A.akE(this,s.toLowerCase()),q),q.i("y.E")) return s}, G(a){var s,r,q,p,o,n,m=this,l=null,k=m.gRB().length,j=m.f if(j===0)s="Scorta doTERRA" else s=j===1?"Catalogo doTERRA":"Lista della spesa" s=A.c5(s,l,l,l,B.UW,l,l) j=j===1?B.i.k($.awU().length)+" prodotti \u2022 Italia \u2022 aggiornato 02/09/2026":"Inventario personale" r=t.p j=A.axk(A.iQ(A.c([s,A.c5(j,l,l,l,A.J(a).ok.Q,l,l)],r),B.bm,B.X,B.ar)) if(m.e)s=B.DF else{s=m.f s=A.ayY(B.cl,A.c([m.ac5(),m.a57(),m.ags()],r),s)}q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l p=m.f o=k>0 n=o?A.axp(B.oF,A.c5(B.i.k(k),l,l,l
+
+,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hx=new A.fs(null,null,null,null,null,null,null,null,null,null,"Cerca nel catalogo doTERRA...",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.oD,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hz=new A.cV(0.25,0.5,B.M) B.Nq=new A.h(0.05,0) B.Ns=new A.h(0.133333,0.06) B.NA=new A.h(0.166666,0.4) B.Nl=new A.h(0.208333,0.82) B.NB=new A.h(0.25,1) B.cg=new A.C4(B.Nq
+
+,null,null) B.MN=new A.tv(B.oA,B.Hj,"Inventario",null) B.GS=new A.c3(61655,"MaterialIcons",!1) B.Hg=new A.cp(B.GS,null,null,null,null) B.GY=new A.c3(63428,"MaterialIcons",!1) B.Hc=new A.cp(B.GY,null,null,null,null) B.MO=new A.tv(B.Hg,B.Hc,"Catalogo",null) B.MP=new A.zC(null,null,null,null,null,null,null,null,null,null) B.dL=new A.Lb(0,"traditional") B.hA=new A.Lb(1,"directional") B.MQ=new A.kq(!0) B.MR=new A.zD(null,null,null,null,null,null,null,null,null,null,null,null,null) B.ve=new A.e5(B.f,B.f) B.N8=new A.h(0,20) B.Na=new A.h(0,26) B.Nc=new A.h(0,-1) B.Nd=new A.h(11,-4) B.eV=new A.h(1,0) B.Ne=new A.h(1,3) B.Nf=new A.h(22,0) B.Ng=new A.h(3,0) B.Nh=n
+
+Icons",!1) B.H8=new A.cp(B.GZ,null,B.dq,null,null) B.ic=new A.db(10,null,null,null) B.lR=new A.k(!0,null,null,null,null,null,null,null,null,null,null,null,1.4,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WR=new A.cb("Catalogo doTERRA Italia aggiornato con listino, novit\xe0, stagionali e prodotti presenti nei kit. App personale indipendente e non ufficiale.",null,B.lR,null,null,null,null,null,null) B.Gt=new A.k6(1,B.cR,B.WR,null) B.I5=s([B.H8,B.ic,B.Gt],t.p) B.Pl=new A.AL(B.aF,B.X,B.ar,B.bm,null,B.bW,null,0,B.I5,null) B.NR=new A.bj(B.jL,B.Pl,null) B.FX=new A.ak(0,0,2,0) B.Hf=new A.cp(B.ov,null,B.nm,null,null) B.NT=new A.bj(B.FX,B
+
+mall",null,null,null,null) B.WA=new A.dw(B.Um,B.Ti,B.Un,B.UO,B.SY,B.T5,B.TC,B.UJ,B.TO,B.Va,B.Ss,B.SK,B.V7,B.Vt,B.Sz) B.WB=new A.cb("Segna acquistato",null,null,null,null,null,null,null,null) B.WD=new A.cb("Prodotto doTERRA non presente nel catalogo",null,null,null,null,null,null,null,null) B.WH=new A.cb("Gestisci aperto / chiuso",null,B.fi,null,null,null,null,null,null) B.W3=new A.k(!0,null,null,null,null,null,24,B.bt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,nul
+
+ll,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,null,null,null) B.WM=new A.cb("Scegli dal catalogo",null,null,null,null,null,null,null,null) B.WN=new A.cb("Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,null,null,null,null,null) B.Au=new A.cb("Annulla",null,null,null,null,null,null,null,null) B.WQ=new A.cb("Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e
+
+rodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,null,null,null,null,null) B.Au=new A.cb("Annulla",null,null,null,null,null,null,null,null) B.WQ=new A.cb("Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e Touch possono essere gestiti anche come aperti/chiusi.",null,B.lR,B.cd,null,null,null,null,null) B.WS=new A.cb("Salva",null,null,null,null,null,null,null,null) B.WT=new A.cb("Aggiorna scorta",null,null,null,null,null,null,null,null) B.WU=new A.cb("Quante unit\xe0 vuoi aggiungere alla scorta?",null,null,null,null,null,null,null,null) B.WW=new A.cb("Apri catalogo",null,null,null,n
+
+va",null,null,null,null,null,null,null,null) B.WT=new A.cb("Aggiorna scorta",null,null,null,null,null,null,null,null) B.WU=new A.cb("Quante unit\xe0 vuoi aggiungere alla scorta?",null,null,null,null,null,null,null,null) B.WW=new A.cb("Apri catalogo",null,null,null,null,null,null,null,null) B.WX=new A.cb("Ho gi\xe0 una confezione aperta",null,B.fi,null,null,null,null,null,null) B.WY=new A.cb("Segna confezione finita",null,null,null,null,null,null,null,null) B.X_=new A.cb("Eliminare il prodotto?",null,null,null,null,null,null,null,null) B.a_l=new A.afp(0,"system") B.Nn=new A.h(0.056,0.024) B.ND=new A.h(0.108,0.3085) B.Nk=new A.h(0.198,0.541) B.Nt=new A.h
+
+--- Catalogo ---
+hits 8
+n q}, ga7m(){var s=B.c.dZ(this.w),r=$.awU(),q=A.Z(r).i("aC<1>") s=A.a2(new A.aC(r,new A.akE(this,s.toLowerCase()),q),q.i("y.E")) return s}, G(a){var s,r,q,p,o,n,m=this,l=null,k=m.gRB().length,j=m.f if(j===0)s="Scorta doTERRA" else s=j===1?"Catalogo doTERRA":"Lista della spesa" s=A.c5(s,l,l,l,B.UW,l,l) j=j===1?B.i.k($.awU().length)+" prodotti \u2022 Italia \u2022 aggiornato 02/09/2026":"Inventario personale" r=t.p j=A.axk(A.iQ(A.c([s,A.c5(j,l,l,l,A.J(a).ok.Q,l,l)],r),B.bm,B.X,B.ar)) if(m.e)s=B.DF else{s=m.f s=A.ayY(B.cl,A.c([m.ac5(),m.a57(),m.ags()],r),s)}q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l p=m.f o=k>0 n=o?A.axp(B.oF,A.c5(B.i.k(k),l,l,l
+
+,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hx=new A.fs(null,null,null,null,null,null,null,null,null,null,"Cerca nel catalogo doTERRA...",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.oD,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null) B.Hz=new A.cV(0.25,0.5,B.M) B.Nq=new A.h(0.05,0) B.Ns=new A.h(0.133333,0.06) B.NA=new A.h(0.166666,0.4) B.Nl=new A.h(0.208333,0.82) B.NB=new A.h(0.25,1) B.cg=new A.C4(B.Nq
+
+,null,null) B.MN=new A.tv(B.oA,B.Hj,"Inventario",null) B.GS=new A.c3(61655,"MaterialIcons",!1) B.Hg=new A.cp(B.GS,null,null,null,null) B.GY=new A.c3(63428,"MaterialIcons",!1) B.Hc=new A.cp(B.GY,null,null,null,null) B.MO=new A.tv(B.Hg,B.Hc,"Catalogo",null) B.MP=new A.zC(null,null,null,null,null,null,null,null,null,null) B.dL=new A.Lb(0,"traditional") B.hA=new A.Lb(1,"directional") B.MQ=new A.kq(!0) B.MR=new A.zD(null,null,null,null,null,null,null,null,null,null,null,null,null) B.ve=new A.e5(B.f,B.f) B.N8=new A.h(0,20) B.Na=new A.h(0,26) B.Nc=new A.h(0,-1) B.Nd=new A.h(11,-4) B.eV=new A.h(1,0) B.Ne=new A.h(1,3) B.Nf=new A.h(22,0) B.Ng=new A.h(3,0) B.Nh=n
+
+Icons",!1) B.H8=new A.cp(B.GZ,null,B.dq,null,null) B.ic=new A.db(10,null,null,null) B.lR=new A.k(!0,null,null,null,null,null,null,null,null,null,null,null,1.4,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WR=new A.cb("Catalogo doTERRA Italia aggiornato con listino, novit\xe0, stagionali e prodotti presenti nei kit. App personale indipendente e non ufficiale.",null,B.lR,null,null,null,null,null,null) B.Gt=new A.k6(1,B.cR,B.WR,null) B.I5=s([B.H8,B.ic,B.Gt],t.p) B.Pl=new A.AL(B.aF,B.X,B.ar,B.bm,null,B.bW,null,0,B.I5,null) B.NR=new A.bj(B.jL,B.Pl,null) B.FX=new A.ak(0,0,2,0) B.Hf=new A.cp(B.ov,null,B.nm,null,null) B.NT=new A.bj(B.FX,B
+
+mall",null,null,null,null) B.WA=new A.dw(B.Um,B.Ti,B.Un,B.UO,B.SY,B.T5,B.TC,B.UJ,B.TO,B.Va,B.Ss,B.SK,B.V7,B.Vt,B.Sz) B.WB=new A.cb("Segna acquistato",null,null,null,null,null,null,null,null) B.WD=new A.cb("Prodotto doTERRA non presente nel catalogo",null,null,null,null,null,null,null,null) B.WH=new A.cb("Gestisci aperto / chiuso",null,B.fi,null,null,null,null,null,null) B.W3=new A.k(!0,null,null,null,null,null,24,B.bt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,nul
+
+ll,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,null,null,null) B.WM=new A.cb("Scegli dal catalogo",null,null,null,null,null,null,null,null) B.WN=new A.cb("Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,null,null,null,null,null) B.Au=new A.cb("Annulla",null,null,null,null,null,null,null,null) B.WQ=new A.cb("Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e
+
+rodotti.",null,null,null,null,null,null,null,null) B.WO=new A.cb("Metti nella lista della spesa",null,null,null,null,null,null,null,null) B.Au=new A.cb("Annulla",null,null,null,null,null,null,null,null) B.WQ=new A.cb("Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e Touch possono essere gestiti anche come aperti/chiusi.",null,B.lR,B.cd,null,null,null,null,null) B.WS=new A.cb("Salva",null,null,null,null,null,null,null,null) B.WT=new A.cb("Aggiorna scorta",null,null,null,null,null,null,null,null) B.WU=new A.cb("Quante unit\xe0 vuoi aggiungere alla scorta?",null,null,null,null,null,null,null,null) B.WW=new A.cb("Apri catalogo",null,null,null,n
+
+va",null,null,null,null,null,null,null,null) B.WT=new A.cb("Aggiorna scorta",null,null,null,null,null,null,null,null) B.WU=new A.cb("Quante unit\xe0 vuoi aggiungere alla scorta?",null,null,null,null,null,null,null,null) B.WW=new A.cb("Apri catalogo",null,null,null,null,null,null,null,null) B.WX=new A.cb("Ho gi\xe0 una confezione aperta",null,B.fi,null,null,null,null,null,null) B.WY=new A.cb("Segna confezione finita",null,null,null,null,null,null,null,null) B.X_=new A.cb("Eliminare il prodotto?",null,null,null,null,null,null,null,null) B.a_l=new A.afp(0,"system") B.Nn=new A.h(0.056,0.024) B.ND=new A.h(0.108,0.3085) B.Nk=new A.h(0.198,0.541) B.Nt=new A.h
+
+--- Wild Orange ---
+hits 1
+","Coriandolo foglie"],t.s) B.Kj=s(["Semi di coriandolo","Coriander"],t.s) B.KC=s(["Abete Douglas","Douglas Fir"],t.s) B.Jz=s(["Eucalipto limone","Lemon Eucalyptus"],t.s) B.Kq=s(["Menta verde","Spearmint"],t.s) B.K9=s(["Arancio selvatico","Wild Orange"],t.s) B.Ky=s(["Juniper Berry"],t.s) B.Jb=s(["Guaiacwood"],t.s) B.Kc=s(["Green Mandarin"],t.s) B.Jw=s(["Tangerine"],t.s) B.Km=s(["Black Spruce"],t.s) B.J2=s(["Blue Tansy"],t.s) B.JQ=s(["Blue Lotus Touch"],t.s) B.I7=s(["Black Pepper"],t.s) B.KI=s(["Clary Sage"],t.s) B.J6=s(["Clove"],t.s) B.Jc=s(["Roman Chamomile"],t.s) B.Jf=s(["Pink Pepper"],t.s) B.Kn=s(["Siberian Fir"],t.s) B.JT=s(["Spanish Sage"],t.s) B.
+
+--- Arancio ---
+hits 6
+r") B.kX=new A.mc(3,"spaceBetween") B.uX=new A.mc(4,"spaceAround") B.uY=new A.mc(5,"spaceEvenly") B.bS=new A.KT(0,"min") B.MT={Arborvitae:0,"Cedro Rosso":1,Cilantro:2,Coriandolo:3,"Abete di Douglas":4,"Limone Eucalipto":5,"Menta Romana":6,"Arancio dolce":7,"Bacche di ginepro":8,"Legno di guaiaco":9,"Mandarino verde":10,Tangerino:11,"Abete nero":12,"Tanaceto blu":13,"Loto blu Touch":14,"Pepe nero":15,"Salvia sclarea":16,"Chiodi di garofano":17,"Camomilla romana":18,"Pepe rosa":19,"Abete siberiano":20,"Salvia spagnola":21,"Vaniglia del Madagascar":22,"Millefoglio e melograno":23} B.I3=s(["Tuia","Thuja","Arbor vitae"],t.s) B.K7=s(["Legno di cedro","Cedarw
+
+Foglie di coriandolo","Coriandolo foglie"],t.s) B.Kj=s(["Semi di coriandolo","Coriander"],t.s) B.KC=s(["Abete Douglas","Douglas Fir"],t.s) B.Jz=s(["Eucalipto limone","Lemon Eucalyptus"],t.s) B.Kq=s(["Menta verde","Spearmint"],t.s) B.K9=s(["Arancio selvatico","Wild Orange"],t.s) B.Ky=s(["Juniper Berry"],t.s) B.Jb=s(["Guaiacwood"],t.s) B.Kc=s(["Green Mandarin"],t.s) B.Jw=s(["Tangerine"],t.s) B.Km=s(["Black Spruce"],t.s) B.J2=s(["Blue Tansy"],t.s) B.JQ=s(["Blue Lotus Touch"],t.s) B.I7=s(["Black Pepper"],t.s) B.KI=s(["Clary Sage"],t.s) B.J6=s(["Clove"],t.s) B.Jc=s(["Roman Chamomile"],t.s) B.Jf=s(["Pink Pepper"],t.s) B.Kn=s(["Siberian Fir"],t.s) B.JT=s(["Sp
+
+fb,B.o,B.zH,B.o,B.zI,B.o,B.zL,B.o,B.zM,B.o,B.i5,B.o,B.i8,B.o],t.Fp) B.MY={tuia:0,"legno di cedro":1,"foglie di coriandolo (cilantro)":2,"foglie di coriandolo":3,"semi di coriandolo":4,"abete douglas":5,"eucalipto limone":6,"menta verde":7,"arancio selvatico":8} B.Md=new A.bG(B.MY,["Arborvitae","Cedro Rosso","Cilantro","Cilantro","Coriandolo","Abete di Douglas","Limone Eucalipto","Menta Romana","Arancio dolce"],t.li) B.L2=new A.f(33) B.L3=new A.f(34) B.L4=new A.f(35) B.L5=new A.f(36) B.L6=new A.f(37) B.L7=new A.f(38) B.L8=new A.f(39) B.L9=new A.f(40) B.La=new A.f(41) B.pb=new A.f(42) B.uE=new A.f(43) B.Lb=new A.f(44) B.uF=new A.f(45) B.uG=new A.f(46) B.
+
+:3,"semi di coriandolo":4,"abete douglas":5,"eucalipto limone":6,"menta verde":7,"arancio selvatico":8} B.Md=new A.bG(B.MY,["Arborvitae","Cedro Rosso","Cilantro","Cilantro","Coriandolo","Abete di Douglas","Limone Eucalipto","Menta Romana","Arancio dolce"],t.li) B.L2=new A.f(33) B.L3=new A.f(34) B.L4=new A.f(35) B.L5=new A.f(36) B.L6=new A.f(37) B.L7=new A.f(38) B.L8=new A.f(39) B.L9=new A.f(40) B.La=new A.f(41) B.pb=new A.f(42) B.uE=new A.f(43) B.Lb=new A.f(44) B.uF=new A.f(45) B.uG=new A.f(46) B.uH=new A.f(47) B.uI=new A.f(48) B.uJ=new A.f(49) B.uK=new A.f(50) B.uL=new A.f(51) B.uM=new A.f(52) B.uN=new A.f(53) B.uO=new A.f(54) B.uP=new A.f(55) B.uQ=ne
+
+erita;Menta piperita Touch;Petitgrain;Pepe rosa;Camomilla romana;Rosa;Rosa Touch;Rosmarino;Sandalo;Sandalo hawaiano;Abete siberiano;Salvia spagnola;Menta Romana;Nardo;Tangerino;Tea Tree (Melaleuca);Tea Tree Touch;Timo;Tulsi;Curcuma;Vetiver;Arancio dolce;Millefoglio e melograno;Ylang Ylang;Echinacea;Palmarosa;Gelsomino;Nootka;Cananga;Legno di ginepro rosso;Abete dell\u2019Himalaya;Anice stellato;Aneto;Menta bergamotto;Litsea;Valeriana;Clementina;Hinoki;Mandarino rosso","Miscele, Touch e aromaterapia","d\u014dTERRA abode\u2122;d\u014dTERRA Adaptiv\u2122;d\u014dTERRA Adaptiv\u2122 Touch;d\u014dTERRA Air\u2122;d\u014dTERRA Air\u2122 Touch;Air-X\u2122;d\u01
+
+idificatore aromatico;Dawn\u2122 umidificatore aromatico con Air-X;Diffusore Laluz\u2122;Diffusore Laluz\u2122 con Citrus Bliss 15 ml;Diffusore Lumo\u2122 con Serenity 15 ml;Diffusore Petal\u2122 2.0;Diffusore Petal\u2122 2.0 con Lavanda e Arancio dolce;Diffusore Roam\u2122;Diffusore Pinguino doTERRA + d\u014dTERRA Calmer\u2122 5 ml","Accessori","Flaconi roll-on ambrati;Adesivi per tappi;Olio di cocco frazionato;Pompa per olio di cocco frazionato;Dispenser ricaricabile sapone mani;Portachiavi grigio;Apritappo per oli;Fialette campione 5/8 dram;Flacone spray;Capsule vegetali vuote;Scatola in legno con logo","Kit e collezioni","Kit iscrizione AromaTouch\
+
+--- quantita ---
+hits 0
+--- quantità ---
+hits 0
+--- aperto ---
+hits 5
+{case 0:if(!a.r){s=1 break}if(a.f){p.hN("Hai gi\xe0 una confezione segnata come aperta.") s=1 break}if(a.e<=0){p.hN("Non hai scorte chiuse da aprire.") s=1 break}p.a5(new A.al9(a)) s=3 return A.M(p.fA(),$async$xl) case 3:if(a.gh4()>0)p.hN("Aperto. "+a.b+" \xe8 entrato nella lista della spesa.") else p.hN("Aperto. Scorta aggiornata.") case 1:return A.O(q,r)}}) return A.P($async$xl,r)}, wC(a){return this.a7z(a)}, a7z(a){var s=0,r=A.Q(t.H),q,p=this var $async$wC=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chius
+
+segnata come aperta.") s=1 break}if(a.e<=0){p.hN("Non hai scorte chiuse da aprire.") s=1 break}p.a5(new A.al9(a)) s=3 return A.M(p.fA(),$async$xl) case 3:if(a.gh4()>0)p.hN("Aperto. "+a.b+" \xe8 entrato nella lista della spesa.") else p.hN("Aperto. Scorta aggiornata.") case 1:return A.O(q,r)}}) return A.P($async$xl,r)}, wC(a){return this.a7z(a)}, a7z(a){var s=0,r=A.Q(t.H),q,p=this var $async$wC=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chiuse.") else p.hN("Finito. Quando apri il prossimo, segnalo dall'inven
+
+m,48) k=A.c5(a.b,m,m,m,B.lS,m,m) i=B.c.dZ(a.d) i=i.length===0?"":" \u2022 "+i i=A.c5(j+i,m,m,m,A.eO(m,m,B.cr,m,m,m,m,m,m,m,m,12,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m) j=t.p s=A.c([n.EQ("SCORTA "+B.i.k(a.e),B.E7,B.Ew)],j) r=a.r if(r){q=a.f p=q?"APERTO":"NESSUNO APERTO" o=q?B.Ed:B.E2 s.push(n.EQ(p,o,q?B.Ei:B.Ez))}if(a.gh4()>0)s.push(n.EQ("DA PRENDERE",B.Ex,B.Eq)) l=A.f3(A.c([l,B.Rh,A.rM(A.iQ(A.c([k,B.Rl,i,B.lI,A.aBJ(s,7,7)],j),B.bm,B.X,B.ar)),new A.tG(new A.akI(),new A.akJ(n,a),m,t.iX)],j),B.bm,B.X,B.ar,0) k=A.jV(14) i=a.e l=A.c([l,B.Rk,A.k0(m,A.f3(A.c([B.Gu,A.oA(m,m,m,B.H7,m,m,i>0?new A.akK(n,a):m,m,m,m,m),A.c5(B.i.k(i),m,m,m,B.lS,m,m),A.oA(m,m,m,B.H6,m,m,n
+
+m,m,m,B.lS,m,m) i=B.c.dZ(a.d) i=i.length===0?"":" \u2022 "+i i=A.c5(j+i,m,m,m,A.eO(m,m,B.cr,m,m,m,m,m,m,m,m,12,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m) j=t.p s=A.c([n.EQ("SCORTA "+B.i.k(a.e),B.E7,B.Ew)],j) r=a.r if(r){q=a.f p=q?"APERTO":"NESSUNO APERTO" o=q?B.Ed:B.E2 s.push(n.EQ(p,o,q?B.Ei:B.Ez))}if(a.gh4()>0)s.push(n.EQ("DA PRENDERE",B.Ex,B.Eq)) l=A.f3(A.c([l,B.Rh,A.rM(A.iQ(A.c([k,B.Rl,i,B.lI,A.aBJ(s,7,7)],j),B.bm,B.X,B.ar)),new A.tG(new A.akI(),new A.akJ(n,a),m,t.iX)],j),B.bm,B.X,B.ar,0) k=A.jV(14) i=a.e l=A.c([l,B.Rk,A.k0(m,A.f3(A.c([B.Gu,A.oA(m,m,m,B.H7,m,m,i>0?new A.akK(n,a):m,m,m,m,m),A.c5(B.i.k(i),m,m,m,B.lS,m,m),A.oA(m,m,m,B.H6,m,m,new A.akL(n,a),m,m
+
+,B.UJ,B.TO,B.Va,B.Ss,B.SK,B.V7,B.Vt,B.Sz) B.WB=new A.cb("Segna acquistato",null,null,null,null,null,null,null,null) B.WD=new A.cb("Prodotto doTERRA non presente nel catalogo",null,null,null,null,null,null,null,null) B.WH=new A.cb("Gestisci aperto / chiuso",null,B.fi,null,null,null,null,null,null) B.W3=new A.k(!0,null,null,null,null,null,24,B.bt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,null,null,null) B.WM=new A.cb("Scegli dal catalogo",null,null,null,null,null,n
+
+--- Aperto ---
+hits 5
+{case 0:if(!a.r){s=1 break}if(a.f){p.hN("Hai gi\xe0 una confezione segnata come aperta.") s=1 break}if(a.e<=0){p.hN("Non hai scorte chiuse da aprire.") s=1 break}p.a5(new A.al9(a)) s=3 return A.M(p.fA(),$async$xl) case 3:if(a.gh4()>0)p.hN("Aperto. "+a.b+" \xe8 entrato nella lista della spesa.") else p.hN("Aperto. Scorta aggiornata.") case 1:return A.O(q,r)}}) return A.P($async$xl,r)}, wC(a){return this.a7z(a)}, a7z(a){var s=0,r=A.Q(t.H),q,p=this var $async$wC=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chius
+
+segnata come aperta.") s=1 break}if(a.e<=0){p.hN("Non hai scorte chiuse da aprire.") s=1 break}p.a5(new A.al9(a)) s=3 return A.M(p.fA(),$async$xl) case 3:if(a.gh4()>0)p.hN("Aperto. "+a.b+" \xe8 entrato nella lista della spesa.") else p.hN("Aperto. Scorta aggiornata.") case 1:return A.O(q,r)}}) return A.P($async$xl,r)}, wC(a){return this.a7z(a)}, a7z(a){var s=0,r=A.Q(t.H),q,p=this var $async$wC=A.R(function(b,c){if(b===1)return A.N(c,r) for(;;)switch(s){case 0:if(!a.f){s=1 break}p.a5(new A.akH(a)) s=3 return A.M(p.fA(),$async$wC) case 3:if(a.e===0)p.hN("Finito. Non hai altre scorte chiuse.") else p.hN("Finito. Quando apri il prossimo, segnalo dall'inven
+
+m,48) k=A.c5(a.b,m,m,m,B.lS,m,m) i=B.c.dZ(a.d) i=i.length===0?"":" \u2022 "+i i=A.c5(j+i,m,m,m,A.eO(m,m,B.cr,m,m,m,m,m,m,m,m,12,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m) j=t.p s=A.c([n.EQ("SCORTA "+B.i.k(a.e),B.E7,B.Ew)],j) r=a.r if(r){q=a.f p=q?"APERTO":"NESSUNO APERTO" o=q?B.Ed:B.E2 s.push(n.EQ(p,o,q?B.Ei:B.Ez))}if(a.gh4()>0)s.push(n.EQ("DA PRENDERE",B.Ex,B.Eq)) l=A.f3(A.c([l,B.Rh,A.rM(A.iQ(A.c([k,B.Rl,i,B.lI,A.aBJ(s,7,7)],j),B.bm,B.X,B.ar)),new A.tG(new A.akI(),new A.akJ(n,a),m,t.iX)],j),B.bm,B.X,B.ar,0) k=A.jV(14) i=a.e l=A.c([l,B.Rk,A.k0(m,A.f3(A.c([B.Gu,A.oA(m,m,m,B.H7,m,m,i>0?new A.akK(n,a):m,m,m,m,m),A.c5(B.i.k(i),m,m,m,B.lS,m,m),A.oA(m,m,m,B.H6,m,m,n
+
+m,m,m,B.lS,m,m) i=B.c.dZ(a.d) i=i.length===0?"":" \u2022 "+i i=A.c5(j+i,m,m,m,A.eO(m,m,B.cr,m,m,m,m,m,m,m,m,12,m,m,m,m,m,!0,m,m,m,m,m,m,m,m),m,m) j=t.p s=A.c([n.EQ("SCORTA "+B.i.k(a.e),B.E7,B.Ew)],j) r=a.r if(r){q=a.f p=q?"APERTO":"NESSUNO APERTO" o=q?B.Ed:B.E2 s.push(n.EQ(p,o,q?B.Ei:B.Ez))}if(a.gh4()>0)s.push(n.EQ("DA PRENDERE",B.Ex,B.Eq)) l=A.f3(A.c([l,B.Rh,A.rM(A.iQ(A.c([k,B.Rl,i,B.lI,A.aBJ(s,7,7)],j),B.bm,B.X,B.ar)),new A.tG(new A.akI(),new A.akJ(n,a),m,t.iX)],j),B.bm,B.X,B.ar,0) k=A.jV(14) i=a.e l=A.c([l,B.Rk,A.k0(m,A.f3(A.c([B.Gu,A.oA(m,m,m,B.H7,m,m,i>0?new A.akK(n,a):m,m,m,m,m),A.c5(B.i.k(i),m,m,m,B.lS,m,m),A.oA(m,m,m,B.H6,m,m,new A.akL(n,a),m,m
+
+,B.UJ,B.TO,B.Va,B.Ss,B.SK,B.V7,B.Vt,B.Sz) B.WB=new A.cb("Segna acquistato",null,null,null,null,null,null,null,null) B.WD=new A.cb("Prodotto doTERRA non presente nel catalogo",null,null,null,null,null,null,null,null) B.WH=new A.cb("Gestisci aperto / chiuso",null,B.fi,null,null,null,null,null,null) B.W3=new A.k(!0,null,null,null,null,null,24,B.bt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null) B.WI=new A.cb("Il tuo inventario doTERRA",null,B.W3,B.cd,null,null,null,null,null) B.WK=new A.cb("Apri una confezione",null,null,null,null,null,null,null,null) B.WM=new A.cb("Scegli dal catalogo",null,null,null,null,null,n
+
+--- soglia ---
+hits 0
+--- threshold ---
+hits 0
+--- shopping ---
+hits 6
+{ gh4(){var s,r=this,q=r.x if(q>0)return q if(r.y)return 0 s=r.w-r.e return s>0?s:0}, ih(){var s=this,r=s.e,q=s.f,p=s.x return A.as(["id",s.a,"name",s.b,"category",s.c,"unit",s.d,"stock",r,"opened",q,"trackOpening",s.r,"targetReserve",s.w,"shoppingQuantity",p,"shoppingDismissed",s.y,"manualShopping",p>0,"notes",s.z],t.N,t.z)}} A.ew.prototype={} A.yx.prototype={ ak(){return new A.DL(A.c([],t.wX))}} A.DL.prototype={ av(){this.aO() this.tj()}, tj(){var s=0,r=A.Q(t.H),q=this,p,o,n,m,l,k var $async$tj=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:s=2 return A.M(A.Nd(),$async$tj) case 2:l=b.a k=A.ct(l.h(0,"doterra_inventory_v2")) if(k==n
+
+q=r.x if(q>0)return q if(r.y)return 0 s=r.w-r.e return s>0?s:0}, ih(){var s=this,r=s.e,q=s.f,p=s.x return A.as(["id",s.a,"name",s.b,"category",s.c,"unit",s.d,"stock",r,"opened",q,"trackOpening",s.r,"targetReserve",s.w,"shoppingQuantity",p,"shoppingDismissed",s.y,"manualShopping",p>0,"notes",s.z],t.N,t.z)}} A.ew.prototype={} A.yx.prototype={ ak(){return new A.DL(A.c([],t.wX))}} A.DL.prototype={ av(){this.aO() this.tj()}, tj(){var s=0,r=A.Q(t.H),q=this,p,o,n,m,l,k var $async$tj=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:s=2 return A.M(A.Nd(),$async$tj) case 2:l=b.a k=A.ct(l.h(0,"doterra_inventory_v2")) if(k==null||B.c.dZ(k).length
+
+eturn 0 s=r.w-r.e return s>0?s:0}, ih(){var s=this,r=s.e,q=s.f,p=s.x return A.as(["id",s.a,"name",s.b,"category",s.c,"unit",s.d,"stock",r,"opened",q,"trackOpening",s.r,"targetReserve",s.w,"shoppingQuantity",p,"shoppingDismissed",s.y,"manualShopping",p>0,"notes",s.z],t.N,t.z)}} A.ew.prototype={} A.yx.prototype={ ak(){return new A.DL(A.c([],t.wX))}} A.DL.prototype={ av(){this.aO() this.tj()}, tj(){var s=0,r=A.Q(t.H),q=this,p,o,n,m,l,k var $async$tj=A.R(function(a,b){if(a===1)return A.N(b,r) for(;;)switch(s){case 0:s=2 return A.M(A.Nd(),$async$tj) case 2:l=b.a k=A.ct(l.h(0,"doterra_inventory_v2")) if(k==null||B.c.dZ(k).length===0){k=A.ct(l.h(0,"oils_inven
+
+,p,o,n,m,l,k,j,i,h=null,g="trackOpening",f=A.azo(a,t.N,t.z),e=A.qJ(f.h(0,"volumeMl")),d=e==null?h:B.d.ey(e) e=f.h(0,"unit") if((e==null?h:B.c.dZ(J.dB(e)).length!==0)===!0)s=J.dB(f.h(0,"unit")) else s=d!=null?B.i.k(d)+" ml":"" e=A.qJ(f.h(0,"shoppingQuantity")) r=e==null?h:B.d.ey(e) if(r==null)r=J.d(f.h(0,"manualShopping"),!0)?1:0 e=f.h(0,"id") e=e==null?h:J.dB(e) if(e==null)e=B.i.k(1000*Date.now()) q=f.h(0,"name") q=q==null?h:J.dB(q) p=B.c.dZ(q==null?"Prodotto doTERRA":q) q=B.Md.h(0,p.toLowerCase()) if(q==null)q=p o=f.h(0,"category") o=o==null?h:J.dB(o) if(o==null)o="Oli essenziali singoli" n=A.qJ(f.h(0,"stock")) n=n==null?h:B.d.ey(n) if(n==null){n=A.qJ
+
+,"volumeMl")),d=e==null?h:B.d.ey(e) e=f.h(0,"unit") if((e==null?h:B.c.dZ(J.dB(e)).length!==0)===!0)s=J.dB(f.h(0,"unit")) else s=d!=null?B.i.k(d)+" ml":"" e=A.qJ(f.h(0,"shoppingQuantity")) r=e==null?h:B.d.ey(e) if(r==null)r=J.d(f.h(0,"manualShopping"),!0)?1:0 e=f.h(0,"id") e=e==null?h:J.dB(e) if(e==null)e=B.i.k(1000*Date.now()) q=f.h(0,"name") q=q==null?h:J.dB(q) p=B.c.dZ(q==null?"Prodotto doTERRA":q) q=B.Md.h(0,p.toLowerCase()) if(q==null)q=p o=f.h(0,"category") o=o==null?h:J.dB(o) if(o==null)o="Oli essenziali singoli" n=A.qJ(f.h(0,"stock")) n=n==null?h:B.d.ey(n) if(n==null){n=A.qJ(f.h(0,"sealed")) n=n==null?h:B.d.ey(n)}if(n==null)n=0 m=J.d(f.h(0,"open
+
+=n==null?h:B.d.ey(n) if(n==null){n=A.qJ(f.h(0,"sealed")) n=n==null?h:B.d.ey(n)}if(n==null)n=0 m=J.d(f.h(0,"opened"),!0) l=!f.az(g)||J.d(f.h(0,g),!0) k=A.qJ(f.h(0,"targetReserve")) k=k==null?h:B.d.ey(k) if(k==null)k=1 j=r<0?0:r i=J.d(f.h(0,"shoppingDismissed"),!0) f=f.h(0,"notes") f=f==null?h:J.dB(f) return new A.ds(e,q,o,s,n,m,l,k,j,i,f==null?"":f)}, $S:533} A.al_.prototype={ $0(){return this.a.e=!1}, $S:0} A.ala.prototype={ $1(a){return a.ih()}, $S:534} A.akg.prototype={ $0(){var s=this.a,r=this.b s.x=r>0?r+1:1 s.y=!1}, $S:0} A.akh.prototype={ $0(){return this.a.d.push(this.b)}, $S:0} A.akk.prototype={ $1(a){var s=this.a,r=s.b,q=r==="Oli essenziali si
+
+--- prefer ---
+hits 5
+pe={ I(){return"CanvasKitVariant."+this.b}} A.a2y.prototype={ gGq(){var s,r=this.b if(r==null)s=null else{r=r.canvasKitMaximumSurfaces r=r==null?null:J.aH(r) s=r}if(s==null)s=8 if(s<1)return 1 return s}, gmW(){var s=this.b s=s==null?null:s.preferWebParagraph return s==null?!1:s}, gGY(){var s=this.b s=s==null?null:s.debugShowSemanticsNodes return s==null?!1:s}, gXu(){var s=this.b s=s==null?null:s.multiViewEnabled return s==null?!1:s}, gXv(){var s=this.b return s==null?null:s.nonce}, gVO(){var s=this.b s=s==null?null:s.fontFallbackBaseUrl return s==null?"https://fonts.gstatic.com/s/":s}} A.Jt.prototype={ gkb(){var s,r,q=this.d if(q==null){q=v.G s=q.windo
+
+!1 return this.a.fS(a)||this.b.fS(a)}, gk0(){return this.c}} A.a8s.prototype={ pN(a){if(a.gaa(0))return this.a=this.a.mK(0,a)}, fS(a){if(a.gaa(0))return!1 return this.a.fS(a)}} A.Ju.prototype={ a3D(){var s,r,q,p,o,n,m=this,l=$.ax_() l.G4("(prefers-color-scheme: dark)",m.gai6()) l.G4("(prefers-reduced-motion: reduce)",m.gai9()) l.G4("(forced-colors: active)",m.gahU()) m.a4q() m.a4k() $.hW.push(m.gcB()) l=m.gMe() s=m.gRo() r=l.b if(r.length===0){q=v.G q.window.addEventListener("focus",l.gO2()) q.window.addEventListener("blur",l.gMn()) q.document.addEventListener("visibilitychange",l.gTp()) q=l.d p=l.c o=p.d n=l.gadN() q.push(new A.d2(o,A.j(o).i("d2<1>"))
+
+eturn this.c}} A.a8s.prototype={ pN(a){if(a.gaa(0))return this.a=this.a.mK(0,a)}, fS(a){if(a.gaa(0))return!1 return this.a.fS(a)}} A.Ju.prototype={ a3D(){var s,r,q,p,o,n,m=this,l=$.ax_() l.G4("(prefers-color-scheme: dark)",m.gai6()) l.G4("(prefers-reduced-motion: reduce)",m.gai9()) l.G4("(forced-colors: active)",m.gahU()) m.a4q() m.a4k() $.hW.push(m.gcB()) l=m.gMe() s=m.gRo() r=l.b if(r.length===0){q=v.G q.window.addEventListener("focus",l.gO2()) q.window.addEventListener("blur",l.gMn()) q.document.addEventListener("visibilitychange",l.gTp()) q=l.d p=l.c o=p.d n=l.gadN() q.push(new A.d2(o,A.j(o).i("d2<1>")).ll(n)) p=p.e q.push(new A.d2(p,A.j(p).i("d2<1
+
+=4278190080 v.G.document.title=l A.aE5(A.b6(k)) a.f4(a3,B.a3.bQ([!0])) return case"SystemChrome.setSystemUIOverlayStyle":j=A.fJ(t.xE.a(s.b).h(0,"statusBarColor")) A.aE5(j==null?a0:A.b6(j)) a.f4(a3,B.a3.bQ([!0])) return case"SystemChrome.setPreferredOrientations":B.Db.vV(t.j.a(s.b)).cf(new A.a1T(a,a3),t.P) return case"SystemSound.play":a.f4(a3,B.a3.bQ([!0])) return case"Clipboard.setData":new A.xf(new A.xh()).ZU(a3,A.ct(t.xE.a(s.b).h(0,"text"))) return case"Clipboard.getData":new A.xf(new A.xh()).Zd(a3,A.ct(s.b)) return case"Clipboard.hasStrings":new A.xf(new A.xh()).anS(a3) return}break case"flutter/service_worker":q=v.G p=q.window i=q.document.createE
+
+arency") B.Mw=new A.L_(0,"none") B.Mx=new A.L_(2,"truncateAfterCompositionEnds") B.My=new A.L1(null,null) B.Mz=new A.zo(null) B.MA=new A.tm(null,null) B.MB=new A.h0("popRoute",null) B.cq=new A.ae9() B.v9=new A.tn("plugins.flutter.io/shared_preferences",B.cq) B.MC=new A.tn("flutter/service_worker",B.cq) B.dK=new A.L5(0,"latestPointer") B.l2=new A.L5(1,"averageBoundaryPointers") B.MD=new A.p2(0,"clipRect") B.ME=new A.p2(1,"clipRRect") B.MF=new A.p2(2,"clipPath") B.MG=new A.p2(3,"transform") B.MH=new A.p2(4,"opacity") B.ML=new A.tu(null,null,null,null,null,null,null,null,null,null,null,null) B.MM=new A.a84(0,"alwaysShow") B.Hj=new A.cp(B.ky,null,null,null
+
+=== LIKELY STRINGS ===
+ tolto dalla lista della spesa.
+(prefers-color-scheme: dark)
+(prefers-reduced-motion: reduce)
+Acquistato: 
+Aggiorna scorta
+Aggiungi all'inventario
+Aggiungi prodotto
+Altro prodotto doTERRA
+Aperti
+Attivo automaticamente per oli, blend e Touch. Puoi usarlo anche per altri prodotti.
+Catalogo
+Catalogo doTERRA
+Cerca nel catalogo doTERRA...
+Cerca nel tuo inventario...
+Finito. Quando apri il prossimo, segnalo dall'inventario.
+Gestisci aperto / chiuso
+Il tuo inventario doTERRA
+Inserisci il nome del prodotto.
+Inventario
+Inventario personale
+Lista della spesa
+Metti nella lista della spesa
+Modifica prodotto
+NESSUNO APERTO
+Prodotti
+Prodotto aggiunto all'inventario.
+Prodotto doTERRA
+Prodotto doTERRA aggiunto.
+Prodotto doTERRA non presente nel catalogo
+Scegli dal catalogo
+Scegli i prodotti dal catalogo e indica quanti ne hai. Oli e Touch possono essere gestiti anche come aperti/chiusi.
+Scorta doTERRA
+Scorta minima
+Scorta: 
+Segna acquistato
+Sotto questo numero il prodotto entra nella lista della spesa.
+Spesa
+doterra_inventory_v2
+flutter.doterra_inventory_v2
+oils_inventory_v1
+plugins.flutter.io/shared_preferences
+
+=== MAP FILES ===
