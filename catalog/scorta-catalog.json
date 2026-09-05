@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "2026.09.05.1",
+  "updatedAt": "2026-09-05",
+  "note": "Aggiornamenti e alias del catalogo Scorta doTERRA. Questo file può essere aggiornato senza ricompilare l'app.",
+  "products": [
+    {
+      "name": "Arancio dolce",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": ["Wild Orange", "Arancio selvatico"]
+    },
+    {
+      "name": "Arborvitae",
+      "category": "Oli essenziali singoli",
+      "unit": "5 ml",
+      "aliases": ["Tuia", "Thuja", "Arbor vitae"]
+    },
+    {
+      "name": "Cedro Rosso",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": ["Legno di cedro", "Cedarwood"]
+    },
+    {
+      "name": "Cilantro",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": ["Foglie di coriandolo", "Coriandolo foglie"]
+    },
+    {
+      "name": "Coriandolo",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": ["Semi di coriandolo", "Coriander"]
+    },
+    {
+      "name": "Abete di Douglas",
+      "category": "Oli essenziali singoli",
+      "unit": "5 ml",
+      "aliases": ["Abete Douglas", "Douglas Fir"]
+    },
+    {
+      "name": "Limone Eucalipto",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": ["Eucalipto limone", "Lemon Eucalyptus"]
+    },
+    {
+      "name": "Menta Romana",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": ["Menta verde", "Spearmint"]
+    }
+  ]
+}
