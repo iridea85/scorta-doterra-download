@@ -1,0 +1,249 @@
+name: Temporary Scorta doTERRA stress test
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/temporary-stress-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check live endpoints and moderate concurrent load
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import concurrent.futures, statistics, time, urllib.request, urllib.error
+
+          base='https://iridea85.github.io/scorta-doterra-download'
+          urls=[
+            base+'/app-v14/',
+            base+'/app-v14/manifest.json',
+            base+'/app-v14/scorta-enhancements-v2.js',
+            base+'/app-v14/nav-layout-v21.js',
+            base+'/catalog/scorta-catalog.json',
+          ]
+
+          # Warm-up + asset availability.
+          for url in urls:
+              req=urllib.request.Request(url, headers={'User-Agent':'Scorta-doTERRA-test/1.0'})
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  body=r.read()
+                  print('WARM', r.status, len(body), url)
+                  if r.status != 200 or not body:
+                      raise SystemExit(f'Endpoint non valido: {url}')
+
+          total=300
+          workers=20
+          timings=[]
+          errors=[]
+
+          def hit(i):
+              url=urls[i % len(urls)]
+              started=time.perf_counter()
+              try:
+                  req=urllib.request.Request(url, headers={'User-Agent':'Scorta-doTERRA-load-test/1.0'})
+                  with urllib.request.urlopen(req, timeout=20) as r:
+                      r.read(256)
+                      status=r.status
+                  elapsed=(time.perf_counter()-started)*1000
+                  return status, elapsed, url, None
+              except Exception as exc:
+                  elapsed=(time.perf_counter()-started)*1000
+                  return 0, elapsed, url, repr(exc)
+
+          with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+              for status, elapsed, url, err in pool.map(hit, range(total)):
+                  timings.append(elapsed)
+                  if status != 200:
+                      errors.append((status,url,err))
+
+          timings_sorted=sorted(timings)
+          p50=statistics.median(timings_sorted)
+          p95=timings_sorted[max(0, int(len(timings_sorted)*0.95)-1)]
+          p99=timings_sorted[max(0, int(len(timings_sorted)*0.99)-1)]
+          print(f'LOAD total={total} concurrency={workers} errors={len(errors)} p50_ms={p50:.1f} p95_ms={p95:.1f} p99_ms={p99:.1f} max_ms={max(timings_sorted):.1f}')
+          if errors:
+              print('ERROR SAMPLE', errors[:10])
+              raise SystemExit(f'{len(errors)} richieste fallite su {total}')
+          PY
+
+      - name: Install browser test dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/scorta-e2e
+          cd /tmp/scorta-e2e
+          npm init -y >/dev/null 2>&1
+          npm install puppeteer-core@24.16.0 --no-audit --no-fund >/dev/null
+          command -v google-chrome || command -v chromium || command -v chromium-browser
+
+      - name: End-to-end functional test in clean browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/scorta-e2e
+          cat > test.js <<'NODE'
+          const puppeteer = require('puppeteer-core');
+          const { execSync } = require('child_process');
+
+          const chrome = (() => {
+            for (const cmd of ['command -v google-chrome','command -v chromium','command -v chromium-browser']) {
+              try { const p=execSync(cmd).toString().trim(); if(p) return p; } catch(_) {}
+            }
+            throw new Error('Chrome/Chromium non trovato');
+          })();
+
+          const url='https://iridea85.github.io/scorta-doterra-download/app-v14/?e2e='+Date.now();
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          const assert = (cond,msg) => { if(!cond) throw new Error(msg); };
+
+          (async()=>{
+            const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page = await browser.newPage();
+            const jsErrors=[];
+            page.on('pageerror', err=>jsErrors.push(String(err)));
+            page.on('console', msg=>{ if(msg.type()==='error') jsErrors.push('console: '+msg.text()); });
+            page.on('dialog', async dialog=>{ await dialog.accept(); });
+
+            await page.goto(url,{waitUntil:'networkidle2',timeout:60000});
+            await page.waitForSelector('[data-mainnav="inventory"]',{timeout:30000});
+
+            const labels=await page.$$eval('[data-mainnav] .lbl',els=>els.map(e=>e.textContent.trim()));
+            assert(labels.join('|')==='Inventario|Catalogo|Spesa','Navigazione principale inattesa: '+labels.join('|'));
+            console.log('PASS navigazione:', labels.join(', '));
+
+            // Catalogo completo e ricerca.
+            await page.click('[data-mainnav="catalog"]');
+            await page.waitForSelector('#scpCatalogSearch',{timeout:15000});
+            const count=await page.$$eval('[data-catalog-name]',els=>els.length);
+            assert(count >= 300, 'Catalogo troppo piccolo: '+count);
+            console.log('PASS catalogo:',count,'prodotti visibili senza filtro');
+
+            await page.$eval('#scpCatalogSearch',(el)=>{el.value='Palmarosa';el.dispatchEvent(new Event('input',{bubbles:true}));});
+            await page.waitForFunction(()=>[...document.querySelectorAll('[data-catalog-name]')].some(c=>(c.dataset.catalogName||'').toLowerCase().includes('palmarosa')),{timeout:10000});
+            await page.evaluate(()=>{
+              const card=[...document.querySelectorAll('[data-catalog-name]')].find(c=>(c.dataset.catalogName||'').toLowerCase().includes('palmarosa'));
+              card.querySelector('[data-action="catInventory"]').click();
+            });
+            await sleep(300);
+
+            // Inventario, quantità, zero e persistenza.
+            await page.click('[data-mainnav="inventory"]');
+            await page.waitForSelector('.scp-stock-editor',{timeout:10000});
+            const palCard=()=>page.evaluateHandle(()=>[...document.querySelectorAll('[data-product]')].find(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa')));
+            let exists=await page.evaluate(()=>[...document.querySelectorAll('[data-product]')].some(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa')));
+            assert(exists,'Palmarosa non compare in Inventario');
+            let removeVisible=await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              return !!c?.querySelector('.scp-stock-editor .scp-remove-inventory');
+            });
+            assert(removeVisible,'Rimuovi dall’inventario non visibile nella scheda');
+            console.log('PASS aggiunta Inventario + comando rimozione visibile');
+
+            await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              const i=c.querySelector('.scp-stock-input'); i.value='2'; i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true}));
+            });
+            await sleep(500);
+            let stock=await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              return c.querySelector('.scp-stock-input').value;
+            });
+            assert(stock==='2','Quantità inventario non salvata a 2: '+stock);
+            console.log('PASS quantità inventario = 2');
+
+            await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              const i=c.querySelector('.scp-stock-input'); i.value='0'; i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true}));
+            });
+            await sleep(500);
+            exists=await page.evaluate(()=>[...document.querySelectorAll('[data-product]')].some(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa')));
+            assert(exists,'Il prodotto è sparito portando la quantità a zero');
+            console.log('PASS quantità 0 mantiene il prodotto');
+
+            await page.reload({waitUntil:'networkidle2',timeout:60000});
+            await page.waitForSelector('[data-mainnav="inventory"]',{timeout:30000});
+            await sleep(500);
+            exists=await page.evaluate(()=>[...document.querySelectorAll('[data-product]')].some(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa')));
+            assert(exists,'Inventario non persistente dopo reload');
+            stock=await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              return c?.querySelector('.scp-stock-input')?.value;
+            });
+            assert(stock==='0','Quantità 0 non persistente dopo reload: '+stock);
+            console.log('PASS persistenza dopo ricarica');
+
+            // Rimozione vera.
+            await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              c.querySelector('.scp-remove-inventory').click();
+            });
+            await sleep(500);
+            exists=await page.evaluate(()=>[...document.querySelectorAll('[data-product]')].some(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa')));
+            assert(!exists,'Rimozione dall’inventario non riuscita');
+            console.log('PASS rimozione completa dall’inventario');
+
+            // Lista della spesa separata dall'inventario.
+            await page.click('[data-mainnav="catalog"]');
+            await page.waitForSelector('#scpCatalogSearch',{timeout:10000});
+            await page.$eval('#scpCatalogSearch',(el)=>{el.value='Echinacea';el.dispatchEvent(new Event('input',{bubbles:true}));});
+            await page.waitForFunction(()=>[...document.querySelectorAll('[data-catalog-name]')].some(c=>(c.dataset.catalogName||'').toLowerCase().includes('echinacea')),{timeout:10000});
+            await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-catalog-name]')].find(x=>(x.dataset.catalogName||'').toLowerCase().includes('echinacea'));
+              c.querySelector('[data-action="catShopping"]').click();
+            });
+            await sleep(300);
+            await page.click('[data-mainnav="shopping"]');
+            await page.waitForSelector('[data-cart-product]',{timeout:10000});
+            let qty=await page.$eval('[data-cart-product] .scp-qty',e=>e.textContent.trim());
+            assert(qty==='1','Quantità Spesa iniziale inattesa: '+qty);
+            await page.click('[data-cart-product] [data-action="plus"]'); await sleep(250);
+            qty=await page.$eval('[data-cart-product] .scp-qty',e=>e.textContent.trim());
+            assert(qty==='2','Plus Spesa non funziona: '+qty);
+            await page.click('[data-cart-product] [data-action="minus"]'); await sleep(250);
+            qty=await page.$eval('[data-cart-product] .scp-qty',e=>e.textContent.trim());
+            assert(qty==='1','Minus Spesa non funziona: '+qty);
+            await page.click('[data-cart-product] [data-action="remove"]'); await sleep(350);
+            const cartCount=await page.$$eval('[data-cart-product]',els=>els.length);
+            assert(cartCount===0,'Togli dalla Spesa non svuota la voce');
+            console.log('PASS Spesa + / - / Togli');
+
+            await page.click('[data-mainnav="inventory"]'); await sleep(350);
+            exists=await page.evaluate(()=>[...document.querySelectorAll('[data-product]')].some(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('echinacea')));
+            assert(exists,'Togliere dalla Spesa ha rimosso anche il prodotto dall’Inventario');
+            console.log('PASS Inventario e Spesa restano indipendenti');
+
+            // Menu secondario e backup.
+            await page.waitForSelector('#scortaHeaderMoreV22',{timeout:10000});
+            await page.click('#scortaHeaderMoreV22');
+            await page.waitForSelector('#scortaHeaderMenuV22 [data-util="data"]',{timeout:5000});
+            await page.click('#scortaHeaderMenuV22 [data-util="data"]');
+            await page.waitForSelector('#scpBackup',{timeout:5000});
+            assert(await page.$('#scpRestore'),'Ripristina backup mancante');
+            console.log('PASS Backup e ripristino raggiungibili');
+
+            await page.click('#scortaHeaderMoreV22');
+            await page.waitForSelector('#scortaHeaderMenuV22 [data-util="info"]',{timeout:5000});
+            await page.click('#scortaHeaderMenuV22 [data-util="info"]');
+            await sleep(250);
+            const header=await page.$eval('#scortaPlusPanel .scp-title strong',e=>e.textContent.trim());
+            assert(header==='Informazioni','Schermata Informazioni non raggiunta: '+header);
+            console.log('PASS menu Informazioni');
+
+            // Filtra errori noti innocui di rete/browser; gli errori JS reali restano bloccanti.
+            const relevant=jsErrors.filter(e=>!e.includes('favicon') && !e.includes('Failed to load resource'));
+            if(relevant.length) throw new Error('Errori JS durante il test: '+relevant.slice(0,8).join(' | '));
+
+            console.log('E2E COMPLETO: OK');
+            await browser.close();
+          })().catch(async err=>{ console.error(err.stack||err); process.exit(1); });
+          NODE
+          node test.js
