@@ -39,6 +39,7 @@ jobs:
       - name: Prepara Scorta doTERRA v14
         run: |
           set -euo pipefail
+          export ASSET_VERSION="${GITHUB_SHA:0:12}"
           rm -rf site
           mkdir -p site/app-v14 site/catalog
           cp index.html site/index.html
@@ -50,32 +51,30 @@ jobs:
           test -s site/app-v14/main.dart.js
 
           cat app-enhancements/parts/*.part > site/app-v14/scorta-enhancements-v2.js
-          cp app-enhancements/nav-layout-v12.js site/app-v14/nav-layout-v14.js
+          cp app-enhancements/nav-layout-v12.js site/app-v14/nav-layout-v21.js
           node --check site/app-v14/scorta-enhancements-v2.js
-          node --check site/app-v14/nav-layout-v14.js
+          node --check site/app-v14/nav-layout-v21.js
 
           python3 - <<'PY'
           from pathlib import Path
-          import struct, zlib, binascii, json, re
+          import struct, zlib, binascii, json, re, os
+
+          asset_version=os.environ['ASSET_VERSION']
 
           # 1) Corregge il build Flutter originale alla fonte.
           main=Path('site/app-v14/main.dart.js')
           s=main.read_text(encoding='utf-8')
 
-          # Rimuove il FloatingActionButton originale "Apri catalogo" dalla Home.
           old='q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l'
           if s.count(old) != 1:
               raise SystemExit(f'Pattern Apri catalogo inatteso: {s.count(old)}')
           s=s.replace(old,'q=l',1)
 
-          # Sostituisce la scatolina grande della Home con un cuore Unicode,
-          # senza dipendere dal subset Material Icons compilato.
           old_icon='B.Hi=new A.cp(B.ky,58,B.dq,null,null)'
           new_icon='B.Hi=new A.cp(new A.c3(9829,null,!1),58,B.dq,null,null)'
           if s.count(old_icon) != 1:
               raise SystemExit(f'Pattern icona Home inatteso: {s.count(old_icon)}')
           s=s.replace(old_icon,new_icon,1)
-
           main.write_text(s,encoding='utf-8')
 
           def chunk(kind, data):
@@ -111,17 +110,19 @@ jobs:
           Path('site/app-v14/icons/Icon-192.png').write_bytes(Path('site/app-v14/icons/Icon-192-heart-v14.png').read_bytes())
           Path('site/app-v14/icons/Icon-512.png').write_bytes(Path('site/app-v14/icons/Icon-512-heart-v14.png').read_bytes())
 
-          # 2) Configura index + manifest v14.
+          # 2) Configura index + manifest. Gli asset usano SEMPRE il commit corrente
+          # come versione, così browser e PWA non possono riutilizzare script vecchi.
           p=Path('site/app-v14/index.html')
           s=p.read_text(encoding='utf-8')
           s=s.replace('<base href="/scorta-doterra-download/app/">','<base href="/scorta-doterra-download/app-v14/">')
           s=s.replace('icons/Icon-192.png','icons/Icon-192-heart-v14.png')
           s=s.replace('icons/Icon-512.png','icons/Icon-512-heart-v14.png')
-          s=s.replace('href="manifest.json"','href="manifest.json?v=14"')
+          s=s.replace('href="manifest.json"',f'href="manifest.json?v={asset_version}"')
           marker='<script src="flutter_bootstrap.js" async></script>'
           if marker not in s:
               raise SystemExit('flutter bootstrap marker non trovato')
-          scripts='<script src="scorta-enhancements-v2.js?v=14"></script>\n  <script src="nav-layout-v14.js?v=14"></script>'
+          scripts=(f'<script src="scorta-enhancements-v2.js?v={asset_version}"></script>\n'
+                   f'  <script src="nav-layout-v21.js?v={asset_version}"></script>')
           s=s.replace(marker,scripts+'\n  '+marker,1)
           p.write_text(s,encoding='utf-8')
 
@@ -145,7 +146,7 @@ jobs:
 
           b=Path('site/app-v14/flutter_bootstrap.js')
           bs=b.read_text(encoding='utf-8')
-          bs,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v14"',bs,count=1)
+          bs,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"',f'serviceWorkerVersion: "scorta-pwa-{asset_version}"',bs,count=1)
           if n!=1:
               raise SystemExit('serviceWorkerVersion non trovato')
           b.write_text(bs,encoding='utf-8')
@@ -153,10 +154,10 @@ jobs:
 
           node --check site/app-v14/main.dart.js
 
-          cat > site/app-v14/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME='scorta-doterra-pwa-v14';
+          cat > site/app-v14/flutter_service_worker.js <<EOF
+          const CACHE_NAME='scorta-doterra-pwa-${ASSET_VERSION}';
           self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll([
-            './','./index.html','./manifest.json?v=14','./scorta-enhancements-v2.js?v=14','./nav-layout-v14.js?v=14','./icons/Icon-192-heart-v14.png','./icons/Icon-512-heart-v14.png'
+            './','./index.html','./manifest.json?v=${ASSET_VERSION}','./scorta-enhancements-v2.js?v=${ASSET_VERSION}','./nav-layout-v21.js?v=${ASSET_VERSION}','./icons/Icon-192-heart-v14.png','./icons/Icon-512-heart-v14.png'
           ])).then(()=>self.skipWaiting())));
           self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('scorta-doterra-')&&k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
           self.addEventListener('fetch',event=>{
@@ -171,7 +172,6 @@ jobs:
           });
           EOF
 
-          # Vecchie versioni pubbliche: al prossimo accesso passano alla v14.
           for old in app-v6 app-v12 app-v13; do
             mkdir -p "site/$old/icons"
             cp site/app-v14/icons/Icon-192-heart-v14.png "site/$old/icons/Icon-192.png"
@@ -184,7 +184,6 @@ jobs:
           EOF
           done
 
-          # Compatibilità app-v7 con il gate licenza esistente.
           rm -rf site/app-v7
           cp -R site/app-v14 site/app-v7
           cp app-enhancements/license-gate-v1.js site/app-v7/license-gate-v1.js
@@ -203,7 +202,8 @@ jobs:
           m.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
-          grep -q 'nav-layout-v14.js' site/app-v14/index.html
+          grep -q 'nav-layout-v21.js' site/app-v14/index.html
+          grep -q 'scortaSimpleBottomNavV21' site/app-v14/nav-layout-v21.js
           ! grep -q 'q=!m.e&&m.f===0?new A.rQ(B.oC,new A.all(m),B.WW,l):l' site/app-v14/main.dart.js
           grep -q 'new A.c3(9829,null,!1)' site/app-v14/main.dart.js
           grep -q 'Icon-192-heart-v14.png' site/app-v14/manifest.json
