@@ -48,7 +48,7 @@ jobs:
           test -s site/app-v6/index.html
           test -s site/app-v6/main.dart.js
 
-          # Nuova icona: goccia + cuore sul viola dell'app.
+          # Nuova icona: goccia + cuore. Usiamo NOMI FILE NUOVI per evitare la cache del launcher Android.
           python3 - <<'PY'
           from pathlib import Path
           import struct, zlib, binascii, math
@@ -66,20 +66,16 @@ jobs:
                   row=bytearray([0])
                   for x in range(size):
                       nx=(x+0.5)/size
-
-                      # Gradiente viola coerente con la UI.
                       t=ny
                       bg=(
                           int(132*(1-t)+91*t),
                           int(101*(1-t)+65*t),
                           int(145*(1-t)+110*t),
                       )
-                      # Leggera luce in alto a sinistra.
                       d=((nx-0.30)**2 + (ny-0.24)**2)**0.5
                       glow=max(0.0, 1.0-d/0.62) * 0.14
                       bg=blend(bg, (205,170,215), glow)
 
-                      # Goccia centrale, punta in alto e base arrotondata.
                       dx=nx-0.5
                       in_drop=False
                       edge=False
@@ -101,10 +97,8 @@ jobs:
                       if edge:
                           color=blend(color,(255,255,255),0.92)
 
-                      # Cuore bianco all'interno della goccia.
                       hx=(nx-0.5)/0.155
                       hy=(ny-0.535)/0.145
-                      # Formula implicita del cuore, orientata correttamente.
                       yy=-hy
                       heart=(hx*hx + yy*yy - 1)**3 - hx*hx*yy*yy*yy <= 0
                       if heart and 0.33 < ny < 0.68:
@@ -124,45 +118,70 @@ jobs:
               p.parent.mkdir(parents=True, exist_ok=True)
               p.write_bytes(png)
 
-          write_icon('site/app-v6/icons/Icon-192.png',192)
-          write_icon('site/app-v6/icons/Icon-512.png',512)
+          write_icon('site/app-v6/icons/Icon-192-heart-v11.png',192)
+          write_icon('site/app-v6/icons/Icon-512-heart-v11.png',512)
+          # Manteniamo aggiornati anche i vecchi nomi come fallback.
+          Path('site/app-v6/icons/Icon-192.png').write_bytes(Path('site/app-v6/icons/Icon-192-heart-v11.png').read_bytes())
+          Path('site/app-v6/icons/Icon-512.png').write_bytes(Path('site/app-v6/icons/Icon-512-heart-v11.png').read_bytes())
           PY
 
           cat app-enhancements/parts/*.part > site/app-v6/scorta-enhancements-v2.js
+          cp app-enhancements/home-swap-v2.js site/app-v6/home-swap-v2.js
           node --check site/app-v6/scorta-enhancements-v2.js
+          node --check site/app-v6/home-swap-v2.js
           echo "5f6d26bb48567a4b74fa46de98c93f4625505b0252f28d820e699623a0f3c320  site/app-v6/scorta-enhancements-v2.js" | sha256sum -c -
 
           python3 - <<'PY'
           from pathlib import Path
+          import json
+
           p=Path('site/app-v6/index.html')
           s=p.read_text(encoding='utf-8')
           s=s.replace('<base href="/scorta-doterra-download/app/">','<base href="/scorta-doterra-download/app-v6/">')
+          s=s.replace('icons/Icon-192.png','icons/Icon-192-heart-v11.png')
+          s=s.replace('icons/Icon-512.png','icons/Icon-512-heart-v11.png')
+          s=s.replace('href="manifest.json"','href="manifest.json?v=11"')
+
           marker='<script src="flutter_bootstrap.js" async></script>'
           enhancement='<script src="scorta-enhancements-v2.js"></script>'
+          navswap='<script src="home-swap-v2.js"></script>'
           if marker not in s:
               raise SystemExit('flutter bootstrap marker non trovato')
           if enhancement not in s:
               s=s.replace(marker, enhancement+'\n  '+marker, 1)
-
-          # Home: il pulsante Strumenti è diverso dalla Guida rapida già presente.
-          # Lo spostiamo più in alto per evitare qualsiasi sovrapposizione.
-          home_fix='<style id="scorta-home-layout-fix">#scortaPlusFab{bottom:calc(190px + env(safe-area-inset-bottom))!important;right:14px!important}</style>'
-          if home_fix not in s:
-              s=s.replace('</head>', '  '+home_fix+'\n</head>', 1)
-
+          if navswap not in s:
+              s=s.replace(marker, navswap+'\n  '+marker, 1)
           p.write_text(s,encoding='utf-8')
 
           m=Path('site/app-v6/manifest.json')
           if m.exists():
-              x=m.read_text(encoding='utf-8').replace('/scorta-doterra-download/app/','/scorta-doterra-download/app-v6/')
-              m.write_text(x,encoding='utf-8')
+              data=json.loads(m.read_text(encoding='utf-8'))
+              data_text=json.dumps(data)
+              data_text=data_text.replace('/scorta-doterra-download/app/','/scorta-doterra-download/app-v6/')
+              data=json.loads(data_text)
+              icons=data.setdefault('icons',[])
+              found192=False
+              found512=False
+              for icon in icons:
+                  sizes=str(icon.get('sizes',''))
+                  if '192' in sizes:
+                      icon['src']='icons/Icon-192-heart-v11.png'
+                      found192=True
+                  if '512' in sizes:
+                      icon['src']='icons/Icon-512-heart-v11.png'
+                      found512=True
+              if not found192:
+                  icons.append({'src':'icons/Icon-192-heart-v11.png','sizes':'192x192','type':'image/png','purpose':'any maskable'})
+              if not found512:
+                  icons.append({'src':'icons/Icon-512-heart-v11.png','sizes':'512x512','type':'image/png','purpose':'any maskable'})
+              m.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
           cat > site/app-v6/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME = 'scorta-doterra-pwa-v10';
+          const CACHE_NAME = 'scorta-doterra-pwa-v11';
           self.addEventListener('install', (event) => {
             event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll([
-              './','./index.html','./manifest.json','./scorta-enhancements-v2.js','./icons/Icon-192.png','./icons/Icon-512.png'
+              './','./index.html','./manifest.json','./scorta-enhancements-v2.js','./home-swap-v2.js','./icons/Icon-192-heart-v11.png','./icons/Icon-512-heart-v11.png'
             ])).then(() => self.skipWaiting()));
           });
           self.addEventListener('activate', (event) => {
@@ -187,7 +206,7 @@ jobs:
           import re
           p=Path('site/app-v6/flutter_bootstrap.js')
           s=p.read_text(encoding='utf-8')
-          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v10"',s,count=1)
+          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v11"',s,count=1)
           if n != 1:
               raise SystemExit('serviceWorkerVersion non trovato')
           p.write_text(s,encoding='utf-8')
@@ -213,17 +232,18 @@ jobs:
               m.write_text(x,encoding='utf-8')
 
           sw=Path('site/app-v7/flutter_service_worker.js')
-          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v10','scorta-doterra-license-v4')
+          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v11','scorta-doterra-license-v5')
           sw.write_text(x,encoding='utf-8')
           PY
 
           grep -q 'scorta-enhancements-v2.js' site/app-v6/index.html
-          grep -q 'scorta-enhancements-v2.js' site/app-v7/index.html
+          grep -q 'home-swap-v2.js' site/app-v6/index.html
+          grep -q 'home-swap-v2.js' site/app-v7/index.html
           grep -q 'license-gate-v1.js' site/app-v7/index.html
-          grep -q 'scorta-home-layout-fix' site/app-v6/index.html
-          grep -q 'serviceWorkerVersion: "scorta-pwa-v10"' site/app-v6/flutter_bootstrap.js
-          test -s site/app-v6/icons/Icon-192.png
-          test -s site/app-v6/icons/Icon-512.png
+          grep -q 'serviceWorkerVersion: "scorta-pwa-v11"' site/app-v6/flutter_bootstrap.js
+          grep -q 'Icon-192-heart-v11.png' site/app-v6/manifest.json
+          test -s site/app-v6/icons/Icon-192-heart-v11.png
+          test -s site/app-v6/icons/Icon-512-heart-v11.png
 
       - name: Mantieni pagine e download esistenti
         run: |
