@@ -1,0 +1,194 @@
+te.catalog?.updatedAt || '2026-09-05')}</div>
+      <div>${filtered.length ? filtered.map(catalogCard).join('') : '<div class="scp-empty" style="margin-top:12px">Nessun risultato nel catalogo online.</div>'}</div>
+      <button class="scp-btn" id="scpNewProduct" style="width:100%;margin-top:12px;padding:13px">+ Aggiungi prodotto nuovo manualmente</button>
+    `;
+    document.getElementById('scpCatalogSearch').addEventListener('input', (e) => {
+      state.catalogSearch = e.target.value;
+      renderCatalog();
+      const input = document.getElementById('scpCatalogSearch');
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+    body.querySelectorAll('[data-catalog-name]').forEach((card) => {
+      const product = products.find((p) => p.name === card.dataset.catalogName);
+      card.querySelector('[data-action="catFavorite"]')?.addEventListener('click', () => {
+        const inv = inventoryByName(product.name) || { id: `catalog:${product.name}`, name: product.name };
+        toggleFavorite(inv);
+      });
+      card.querySelector('[data-action="catInventory"]')?.addEventListener('click', () => addCatalogToInventory(product, 'inventory'));
+      card.querySelector('[data-action="catShopping"]')?.addEventListener('click', () => addCatalogToInventory(product, 'shopping'));
+    });
+    document.getElementById('scpNewProduct').addEventListener('click', addManualProduct);
+  };
+
+  const catalogCard = (p) => {
+    const existing = inventoryByName(p.name);
+    const pseudo = existing || { id: `catalog:${p.name}`, name: p.name };
+    return `
+      <article class="scp-card" data-catalog-name="${esc(p.name)}">
+        <div class="scp-row">
+          <div class="scp-main">
+            <div class="scp-name">${esc(p.name)}</div>
+            <div class="scp-sub">${esc(p.category || '')}${p.unit ? ` · ${esc(p.unit)}` : ''}</div>
+            ${(p.aliases || []).length ? `<div class="scp-alias">Trovi anche: ${esc(p.aliases.join(' · '))}</div>` : ''}
+          </div>
+          <button class="scp-star" data-action="catFavorite">${isFavorite(pseudo) ? '★' : '☆'}</button>
+        </div>
+        <div class="scp-actions">
+          <button class="scp-btn" data-action="catInventory" ${existing ? 'disabled' : ''}>${existing ? 'Già in inventario' : 'Aggiungi all’inventario'}</button>
+          <button class="scp-btn primary" data-action="catShopping">Metti nella spesa</button>
+        </div>
+      </article>
+    `;
+  };
+
+  const addManualProduct = () => {
+    const name = prompt('Nome del prodotto doTERRA:');
+    if (!name || !name.trim()) return;
+    if (inventoryByName(name)) {
+      toast('Questo prodotto è già nel tuo inventario.');
+      return;
+    }
+    const category = prompt('Categoria:', 'Oli essenziali singoli') || 'Altro';
+    const unit = prompt('Formato (es. 15 ml):', '') || '';
+    const item = newInventoryItem({ name: name.trim(), category: category.trim(), unit: unit.trim() });
+    persistInventory([...state.inventory, item]);
+    toast(`${item.name} aggiunto all'inventario.`);
+  };
+
+  const shoppingText = () => {
+    const items = state.inventory.filter((p) => effectiveShopping(p) > 0)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'it'));
+    if (!items.length) return 'Lista della spesa doTERRA vuota.';
+    return ['Lista della spesa doTERRA', '', ...items.map((p) => `• ${p.name} × ${effectiveShopping(p)}`)].join('\n');
+  };
+
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) {}
+      textarea.remove();
+      return ok;
+    }
+  };
+
+  const renderShopping = () => {
+    const body = document.getElementById('scpBody');
+    const items = state.inventory.filter((p) => effectiveShopping(p) > 0)
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'it'));
+    body.innerHTML = `
+      <div class="scp-toolbar">
+        <button class="scp-btn" id="scpCopyList">Copia lista</button>
+        <button class="scp-btn primary" id="scpShareList">Condividi</button>
+        <button class="scp-btn danger" id="scpClearList">Svuota lista</button>
+        <button class="scp-btn" id="scpGoCatalog">+ Aggiungi prodotto</button>
+      </div>
+      ${items.length ? items.map(shoppingCard).join('') : '<div class="scp-empty">La lista della spesa è vuota.</div>'}
+    `;
+    body.querySelectorAll('[data-cart-product]').forEach((card) => {
+      const key = card.dataset.cartProduct;
+      card.querySelector('[data-action="minus"]')?.addEventListener('click', () => changeShopping(key, -1));
+      card.querySelector('[data-action="plus"]')?.addEventListener('click', () => changeShopping(key, 1));
+      card.querySelector('[data-action="remove"]')?.addEventListener('click', () => removeShopping(key));
+      card.querySelector('[data-action="purchased"]')?.addEventListener('click', () => markPurchased(key));
+    });
+    document.getElementById('scpCopyList').addEventListener('click', async () => {
+      await copyText(shoppingText());
+      toast('Lista copiata.');
+    });
+    document.getElementById('scpShareList').addEventListener('click', async () => {
+      const text = shoppingText();
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Lista della spesa doTERRA', text }); return; } catch (_) {}
+      }
+      await copyText(text);
+      toast('Condivisione non disponibile: lista copiata.');
+    });
+    document.getElementById('scpClearList').addEventListener('click', () => {
+      if (!items.length) return;
+      if (!confirm('Svuotare tutta la lista della spesa?')) return;
+      const keys = new Set(items.map(keyForProduct));
+      const inv = state.inventory.map((p) => keys.has(keyForProduct(p))
+        ? { ...p, shoppingQuantity: 0, shoppingDismissed: true, manualShopping: false }
+        : p);
+      persistInventory(inv);
+      toast('Lista svuotata.');
+    });
+    document.getElementById('scpGoCatalog').addEventListener('click', () => {
+      state.currentTab = 'catalog'; panelShell(); renderCurrent();
+    });
+  };
+
+  const shoppingCard = (p) => {
+    const key = keyForProduct(p);
+    const qty = effectiveShopping(p);
+    return `
+      <article class="scp-card" data-cart-product="${esc(key)}">
+        <div class="scp-name">${esc(p.name)}</div>
+        <div class="scp-sub">${esc(p.category || '')}</div>
+        <div class="scp-cartrow">
+          <button class="scp-step" data-action="minus">−</button>
+          <div class="scp-qty">${qty}</div>
+          <button class="scp-step" data-action="plus">+</button>
+          <div class="scp-spacer"></div>
+          <button class="scp-btn danger" data-action="remove">Togli</button>
+        </div>
+        <div class="scp-actions"><button class="scp-btn primary" data-action="purchased">Segna acquistato</button></div>
+      </article>
+    `;
+  };
+
+  const renderHistory = () => {
+    const body = document.getElementById('scpBody');
+    const rows = [];
+    Object.entries(state.meta.purchaseHistory || {}).forEach(([key, list]) => {
+      (list || []).forEach((entry) => rows.push({ key, ...entry }));
+    });
+    rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+    body.innerHTML = `
+      <div class="scp-info"><b>Cronologia acquisti</b><p>Quando premi “Segna acquistato” viene memorizzata data e quantità. Non è contabilità: serve solo come memoria pratica.</p></div>
+      ${rows.length ? rows.map((r) => `<div class="scp-history"><b>${esc(r.name || 'Prodotto')} · ${Number(r.qty || 1)} pz</b><span>${formatDate(r.date, true)}</span></div>`).join('') : '<div class="scp-empty">Non ci sono ancora acquisti registrati.</div>'}
+    `;
+  };
+
+  const createBackup = () => {
+    const storage = {};
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || LICENSE_KEYS.has(key)) continue;
+      if (/scorta_doterra_iridea85_v1_/i.test(key)) continue;
+      storage[key] = localStorage.getItem(key);
+    }
+    return {
+      format: 'scorta-doterra-backup',
+      schemaVersion: 1,
+      createdAt: todayIso(),
+      appVersion: APP_VERSION,
+      storage,
+    };
+  };
+
+  const downloadBackup = () => {
+    const backup = createBackup();
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Scorta-doTERRA-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Backup creato.');
+  };
+
+  const 
