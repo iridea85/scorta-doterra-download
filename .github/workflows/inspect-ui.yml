@@ -21,13 +21,13 @@ jobs:
           rm -rf /tmp/scorta-ui
           mkdir -p /tmp/scorta-ui
           unzip -q /tmp/scorta.zip -d /tmp/scorta-ui
-      - name: Inspect labels in compiled JS
+      - name: Inspect labels and icon constants in compiled JS
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('/tmp/scorta-ui/main.dart.js')
           s=p.read_text(encoding='utf-8',errors='replace')
-          terms=['Apri catalogo','Scegli dal catalogo','Catalogo','Il tuo inventario doTERRA']
+          terms=['Apri catalogo','Scegli dal catalogo','Catalogo','Il tuo inventario doTERRA','B.Hi=','B.oC=','B.Gg=']
           for term in terms:
               print('\n===',term,'===')
               start=0
@@ -37,7 +37,7 @@ jobs:
                   if i<0: break
                   count+=1
                   print('OCCURRENCE',count,'INDEX',i)
-                  print(s[max(0,i-900):min(len(s),i+1200)])
+                  print(s[max(0,i-1200):min(len(s),i+1800)])
                   print('\n---')
                   start=i+len(term)
                   if count>=10: break
