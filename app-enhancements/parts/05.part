@@ -1,0 +1,80 @@
+
+(() => {
+  'use strict';
+
+  const BASE_CATALOG_URL = 'https://raw.githubusercontent.com/iridea85/scorta-doterra-download/main/catalog/scorta-catalog.json';
+  const EXTRA_CATALOG_URL = 'https://raw.githubusercontent.com/iridea85/scorta-doterra-download/main/catalog/scorta-catalog-extra.json';
+  const nativeFetch = window.fetch.bind(window);
+
+  const normalizeCatalogName = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[™®]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const mergeCatalogs = (base, extra) => {
+    const products = Array.isArray(base?.products)
+      ? base.products.map((p) => ({ ...p, aliases: [...(p.aliases || [])] }))
+      : [];
+    const byName = new Map(products.map((p, index) => [normalizeCatalogName(p.name), index]));
+
+    for (const patch of (Array.isArray(extra?.products) ? extra.products : [])) {
+      const matchKey = normalizeCatalogName(patch.match || patch.name);
+      const index = byName.get(matchKey);
+
+      if (index != null) {
+        const current = products[index];
+        current.aliases = [...new Set([...(current.aliases || []), ...(patch.aliases || [])])];
+        if ((!current.unit || current.unit === '') && patch.unit) current.unit = patch.unit;
+        if ((!current.category || current.category === '') && patch.category) current.category = patch.category;
+        continue;
+      }
+
+      const clean = { ...patch };
+      delete clean.match;
+      clean.aliases = [...new Set(clean.aliases || [])];
+      products.push(clean);
+      byName.set(normalizeCatalogName(clean.name), products.length - 1);
+    }
+
+    return {
+      ...base,
+      catalogVersion: `${base?.catalogVersion || 'base'}+${extra?.catalogVersion || 'shop'}`,
+      updatedAt: extra?.updatedAt || base?.updatedAt,
+      source: 'Catalogo base + integrazioni verificate sullo shop ufficiale doTERRA Italia',
+      note: 'Il catalogo unisce il listino generale ai prodotti recenti, speciali e non vendibili singolarmente presenti nello shop ufficiale.',
+      products,
+    };
+  };
+
+  window.fetch = async function scortaCatalogFetch(input, init) {
+    const url = typeof input === 'string' ? input : (input?.url || '');
+    if (!url.startsWith(BASE_CATALOG_URL)) return nativeFetch(input, init);
+
+    const baseResponse = await nativeFetch(input, init);
+    if (!baseResponse.ok) return baseResponse;
+
+    try {
+      const [base, extraResponse] = await Promise.all([
+        baseResponse.clone().json(),
+        nativeFetch(`${EXTRA_CATALOG_URL}?v=${Date.now()}`, { cache: 'no-store' }),
+      ]);
+      if (!extraResponse.ok) return baseResponse;
+
+      const extra = await extraResponse.json();
+      const merged = mergeCatalogs(base, extra);
+      return new Response(JSON.stringify(merged), {
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      });
+    } catch (_) {
+      return baseResponse;
+    }
+  };
+})();
