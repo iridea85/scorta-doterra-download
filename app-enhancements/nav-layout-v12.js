@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const STYLE_ID = 'scortaUnifiedNavV19Style';
-  const NAV_ID = 'scortaUnifiedBottomNavV19';
+  const STYLE_ID = 'scortaUnifiedNavV20Style';
+  const NAV_ID = 'scortaUnifiedBottomNavV20';
 
   function injectStyle(){
     if (document.getElementById(STYLE_ID)) return;
@@ -66,6 +66,11 @@
         max-height:none!important;
         z-index:2147483200!important;
       }
+      #scortaPlusPanel.scp-closing-smooth{
+        transition:opacity 120ms ease-out!important;
+        will-change:opacity!important;
+        pointer-events:none!important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -75,11 +80,11 @@
       'scortaCatalogFloatV12','scortaToolsBottomV12','scortaToolsBottomV13',
       'scortaToolsBottomV15','scortaToolsBottomV16','scortaToolsBottomV17',
       'scortaToolsNav','scpPersistentBottomNav','scortaInventoryBottomProxyV17',
-      'scortaShoppingBottomProxyV17','scortaUnifiedBottomNavV18'
+      'scortaShoppingBottomProxyV17','scortaUnifiedBottomNavV18','scortaUnifiedBottomNavV19'
     ].forEach(id=>document.getElementById(id)?.remove());
     [
       'scpPersistentBottomNavStyle','scortaNavV17Style','scortaNavV16Style',
-      'scortaNavV15Style','scortaUnifiedNavV18Style'
+      'scortaNavV15Style','scortaUnifiedNavV18Style','scortaUnifiedNavV19Style'
     ].forEach(id=>document.getElementById(id)?.remove());
   }
 
@@ -109,15 +114,33 @@
     syncActive();
   }
 
-  function hardClosePanel(){
-    document.getElementById('scortaPlusPanel')?.remove();
-  }
-
   function goInventory(){
-    /* L'inventario Flutter è già sotto al pannello: basta chiudere Strumenti.
-       Nessun reload della pagina, quindi nessun lampeggio. */
-    hardClosePanel();
-    syncActive();
+    const panel=document.getElementById('scortaPlusPanel');
+    if (!panel) { syncActive(); return; }
+
+    /* Flutter può impiegare qualche frame a ridisegnare il canvas rimasto
+       coperto dal pannello. Lo sollecitiamo mentre Strumenti è ancora visibile,
+       poi sfumiamo il pannello solo dopo due frame già renderizzati. */
+    try { window.dispatchEvent(new Event('resize')); } catch (_) {}
+    const flutter=document.querySelector('flutter-view,flt-glass-pane,flt-scene-host,canvas');
+    if (flutter) {
+      try {
+        const old=flutter.style.transform;
+        flutter.style.transform='translateZ(0)';
+        void flutter.getBoundingClientRect();
+        requestAnimationFrame(()=>{ flutter.style.transform=old; });
+      } catch (_) {}
+    }
+
+    panel.classList.add('scp-closing-smooth');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      panel.style.opacity='0';
+      setTimeout(()=>{
+        panel.remove();
+        try { window.dispatchEvent(new Event('resize')); } catch (_) {}
+        syncActive();
+      },130);
+    }));
   }
 
   function openPanelThen(tab){
