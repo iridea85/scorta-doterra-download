@@ -1,0 +1,143 @@
+let item = inventoryByName(catalogProduct.name);
+    if (item) {
+      if (mode === 'shopping') {
+        const qty = effectiveShopping(item);
+        item.shoppingQuantity = qty > 0 ? qty + 1 : 1;
+        item.shoppingDismissed = false;
+        persistInventory([...state.inventory]);
+        toast(`${item.name} aggiunto alla lista della spesa.`);
+      } else {
+        toast(`${item.name} è già nel tuo inventario.`);
+      }
+      return;
+    }
+
+    item = newInventoryItem(catalogProduct, {
+      stock: 0,
+      opened: false,
+      shoppingQuantity: mode === 'shopping' ? 1 : 0,
+    });
+    persistInventory([...state.inventory, item]);
+    toast(mode === 'shopping'
+      ? `${item.name} aggiunto alla lista della spesa.`
+      : `${item.name} aggiunto all'inventario.`);
+  };
+
+  const changeShopping = (productKey, delta) => {
+    const inv = state.inventory.map((p) => {
+      if (keyForProduct(p) !== productKey) return p;
+      const current = effectiveShopping(p);
+      const next = Math.max(0, current + delta);
+      return {
+        ...p,
+        shoppingQuantity: next,
+        shoppingDismissed: next === 0,
+        manualShopping: next > 0,
+      };
+    });
+    persistInventory(inv);
+  };
+
+  const removeShopping = (productKey) => {
+    const inv = state.inventory.map((p) => keyForProduct(p) === productKey
+      ? { ...p, shoppingQuantity: 0, shoppingDismissed: true, manualShopping: false }
+      : p);
+    persistInventory(inv);
+  };
+
+  const markPurchased = (productKey) => {
+    const product = state.inventory.find((p) => keyForProduct(p) === productKey);
+    if (!product) return;
+    const qty = effectiveShopping(product);
+    if (qty < 1) return;
+    recordPurchase(product, qty);
+    const inv = state.inventory.map((p) => keyForProduct(p) === productKey
+      ? {
+          ...p,
+          stock: Number(p.stock || 0) + qty,
+          shoppingQuantity: 0,
+          shoppingDismissed: false,
+          manualShopping: false,
+        }
+      : p);
+    persistInventory(inv);
+    toast(`Acquisto registrato: ${product.name} × ${qty}.`);
+  };
+
+  const toggleOpened = (productKey) => {
+    const now = todayIso();
+    let blocked = false;
+    const inv = state.inventory.map((p) => {
+      if (keyForProduct(p) !== productKey || p.trackOpening === false) return p;
+      if (!p.opened) {
+        const stock = Math.max(0, Number(p.stock || 0));
+        if (stock <= 0) { blocked = true; return p; }
+        state.meta.openedDates[productKey] = now;
+        return { ...p, stock: stock - 1, opened: true, shoppingDismissed: false };
+      }
+      return { ...p, opened: false };
+    });
+    if (blocked) { toast('Non hai scorte chiuse da aprire.'); return; }
+    saveMeta();
+    persistInventory(inv);
+    const current = inv.find((p) => keyForProduct(p) === productKey);
+    toast(current?.opened ? 'Confezione aperta. Scorta aggiornata.' : 'Confezione segnata come finita.');
+  };
+
+  const getStats = () => {
+    const inv = state.inventory;
+    return {
+      total: inv.length,
+      opened: inv.filter((p) => p.opened === true).length,
+      shopping: inv.filter((p) => effectiveShopping(p) > 0).length,
+      exhausted: inv.filter((p) => Number(p.stock || 0) <= 0 && p.opened !== true).length,
+      below: inv.filter((p) => Number(p.stock || 0) < Number(p.targetReserve ?? 1)).length,
+      favorites: inv.filter(isFavorite).length,
+    };
+  };
+
+  const matchesFilter = (p) => {
+    switch (state.filter) {
+      case 'opened': return p.opened === true;
+      case 'closed': return Number(p.stock || 0) > 0;
+      case 'exhausted': return Number(p.stock || 0) <= 0 && p.opened !== true;
+      case 'shopping': return effectiveShopping(p) > 0;
+      case 'favorites': return isFavorite(p);
+      case 'below': return Number(p.stock || 0) < Number(p.targetReserve ?? 1);
+      default: return true;
+    }
+  };
+
+  const filteredInventory = () => {
+    const q = normalize(state.search);
+    return state.inventory
+      .filter(matchesFilter)
+      .filter((p) => !q || normalize(`${p.name} ${p.category} ${p.notes || ''}`).includes(q))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'it'));
+  };
+
+  const injectStyles = () => {
+    if (document.getElementById('scortaPlusStyle')) return;
+    const style = document.createElement('style');
+    style.id = 'scortaPlusStyle';
+    style.textContent = `
+      #scortaPlusFab{position:fixed;right:14px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:2147483000;border:0;border-radius:18px;background:#6e5578;color:white;box-shadow:0 10px 30px rgba(57,39,64,.25);font:800 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:12px 14px;display:none;align-items:center;gap:7px;-webkit-tap-highlight-color:transparent}
+      #scortaPlusFab.show{display:flex}
+      #scortaPlusPanel{position:fixed;inset:0;z-index:2147483100;background:#f7f4f7;color:#2b2530;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+      #scortaPlusPanel *{box-sizing:border-box}
+      .scp-head{padding:calc(12px + env(safe-area-inset-top)) 14px 10px;background:white;border-bottom:1px solid #e8e1ea;display:flex;align-items:center;gap:10px;flex:0 0 auto}
+      .scp-title{flex:1;min-width:0}.scp-title strong{display:block;font-size:19px}.scp-title span{display:block;color:#7b737e;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .scp-close{border:0;background:#eee7f1;color:#6e5578;border-radius:13px;padding:10px 12px;font-weight:900;font-size:13px}
+      .scp-tabs{display:flex;gap:7px;padding:9px 10px;background:white;overflow-x:auto;border-bottom:1px solid #ece6ee;flex:0 0 auto;scrollbar-width:none}.scp-tabs::-webkit-scrollbar{display:none}
+      .scp-tab{white-space:nowrap;border:1px solid #e4dce7;background:#fff;color:#675e6b;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800}.scp-tab.active{background:#6e5578;color:#fff;border-color:#6e5578}
+      .scp-body{flex:1;overflow:auto;padding:14px 12px calc(30px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+      .scp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.scp-stat{border:1px solid #e6dfe8;background:#fff;border-radius:18px;padding:13px;text-align:left}.scp-stat b{display:block;font-size:25px;line-height:1}.scp-stat span{display:block;color:#776f7a;font-size:11px;font-weight:800;margin-top:5px}
+      .scp-search{width:100%;border:1px solid #ded5e1;background:#fff;border-radius:16px;padding:13px 14px;font-size:15px;outline:none;margin:12px 0 9px}.scp-search:focus{border-color:#8a7195;box-shadow:0 0 0 3px rgba(110,85,120,.09)}
+      .scp-chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:9px;scrollbar-width:none}.scp-chips::-webkit-scrollbar{display:none}.scp-chip{white-space:nowrap;border:1px solid #dfd6e2;background:white;color:#665d69;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800}.scp-chip.active{background:#eee7f1;color:#6e5578;border-color:#cabbd0}
+      .scp-card{background:#fff;border:1px solid #e6dfe8;border-radius:20px;padding:14px;margin:9px 0;box-shadow:0 6px 20px rgba(57,39,64,.04)}
+      .scp-row{display:flex;align-items:flex-start;gap:10px}.scp-main{flex:1;min-width:0}.scp-name{font-size:16px;font-weight:900;line-height:1.2}.scp-sub{font-size:11px;color:#7c747f;margin-top:4px;line-height:1.4}.scp-star{border:0;background:#f4f0f5;border-radius:12px;width:38px;height:38px;font-size:19px;flex:0 0 auto}
+      .scp-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.scp-badge{font-size:10px;font-weight:850;border-radius:999px;padding:5px 8px;background:#f2edf4;color:#6e5578}.scp-badge.green{background:#ebf3e8;color:#4c7045}.scp-badge.orange{background:#fff1e5;color:#9a5a23}.scp-badge.red{background:#fff0f1;color:#9b424a}
+      .scp-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.scp-btn{border:1px solid #d9cfdd;background:#fff;color:#6e5578;border-radius:13px;padding:9px 11px;font-size:11px;font-weight:900}.scp-btn.primary{background:#6e5578;color:#fff;border-color:#6e5578}.scp-btn.dark{background:#2f2a32;color:#fff;border-color:#2f2a32}.scp-btn.danger{color:#9b424a;border-color:#efcbd0;background:#fff7f8}.scp-btn:disabled{opacity:.45}
+      .scp-section-title{font-size:16px;font-weight:950;margin:17px 1px 8px}.scp-muted{color:#7a727c;font-size:12px;line-height:1.5}.scp-empty{background:#fff;border:1px dashed #d9cfdd;border-radius:18px;padding:22px;text-align:center;color:#7b737e;font-size:13px;line-height:1.5}
+      .scp-cartrow{display:flex;align-items:center;gap:8px;margin-top:12px}.scp-step{width:36px;height:36px;border:1px solid #d9cfdd;background:white;border-radius:11px;font-size:20px;font-weight:900;color:#6e5578}.scp-qty{min-width:35px;text-align:center;font-size:17px;font-weight:950}.scp-spacer{flex:1}
+      .scp-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.scp-too
