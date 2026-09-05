@@ -48,6 +48,86 @@ jobs:
           test -s site/app-v6/index.html
           test -s site/app-v6/main.dart.js
 
+          # Nuova icona: goccia + cuore sul viola dell'app.
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct, zlib, binascii, math
+
+          def chunk(kind, data):
+              return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", binascii.crc32(kind + data) & 0xffffffff)
+
+          def blend(bg, fg, alpha):
+              return tuple(int(bg[i] * (1-alpha) + fg[i] * alpha) for i in range(3))
+
+          def write_icon(path, size):
+              rows=[]
+              for y in range(size):
+                  ny=(y+0.5)/size
+                  row=bytearray([0])
+                  for x in range(size):
+                      nx=(x+0.5)/size
+
+                      # Gradiente viola coerente con la UI.
+                      t=ny
+                      bg=(
+                          int(132*(1-t)+91*t),
+                          int(101*(1-t)+65*t),
+                          int(145*(1-t)+110*t),
+                      )
+                      # Leggera luce in alto a sinistra.
+                      d=((nx-0.30)**2 + (ny-0.24)**2)**0.5
+                      glow=max(0.0, 1.0-d/0.62) * 0.14
+                      bg=blend(bg, (205,170,215), glow)
+
+                      # Goccia centrale, punta in alto e base arrotondata.
+                      dx=nx-0.5
+                      in_drop=False
+                      edge=False
+                      if 0.17 <= ny <= 0.83:
+                          if ny <= 0.50:
+                              u=(ny-0.17)/0.33
+                              hw=0.285*(max(0.0,u)**0.68)
+                          else:
+                              u=(ny-0.53)/0.30
+                              hw=0.285*math.sqrt(max(0.0,1-u*u))
+                          if hw > 0:
+                              r=abs(dx)/hw
+                              in_drop=r <= 1
+                              edge=0.90 <= r <= 1.03
+
+                      color=bg
+                      if in_drop:
+                          color=blend(color,(250,244,252),0.16)
+                      if edge:
+                          color=blend(color,(255,255,255),0.92)
+
+                      # Cuore bianco all'interno della goccia.
+                      hx=(nx-0.5)/0.155
+                      hy=(ny-0.535)/0.145
+                      # Formula implicita del cuore, orientata correttamente.
+                      yy=-hy
+                      heart=(hx*hx + yy*yy - 1)**3 - hx*hx*yy*yy*yy <= 0
+                      if heart and 0.33 < ny < 0.68:
+                          color=blend(color,(255,255,255),0.98)
+
+                      row.extend((*color,255))
+                  rows.append(bytes(row))
+
+              raw=b''.join(rows)
+              png=(
+                  b'\x89PNG\r\n\x1a\n' +
+                  chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0)) +
+                  chunk(b'IDAT', zlib.compress(raw, 9)) +
+                  chunk(b'IEND', b'')
+              )
+              p=Path(path)
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_bytes(png)
+
+          write_icon('site/app-v6/icons/Icon-192.png',192)
+          write_icon('site/app-v6/icons/Icon-512.png',512)
+          PY
+
           cat app-enhancements/parts/*.part > site/app-v6/scorta-enhancements-v2.js
           node --check site/app-v6/scorta-enhancements-v2.js
           echo "5f6d26bb48567a4b74fa46de98c93f4625505b0252f28d820e699623a0f3c320  site/app-v6/scorta-enhancements-v2.js" | sha256sum -c -
@@ -79,7 +159,7 @@ jobs:
           PY
 
           cat > site/app-v6/flutter_service_worker.js <<'EOF'
-          const CACHE_NAME = 'scorta-doterra-pwa-v9';
+          const CACHE_NAME = 'scorta-doterra-pwa-v10';
           self.addEventListener('install', (event) => {
             event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll([
               './','./index.html','./manifest.json','./scorta-enhancements-v2.js','./icons/Icon-192.png','./icons/Icon-512.png'
@@ -107,7 +187,7 @@ jobs:
           import re
           p=Path('site/app-v6/flutter_bootstrap.js')
           s=p.read_text(encoding='utf-8')
-          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v9"',s,count=1)
+          s,n=re.subn(r'serviceWorkerVersion:\s*"[^"]+"','serviceWorkerVersion: "scorta-pwa-v10"',s,count=1)
           if n != 1:
               raise SystemExit('serviceWorkerVersion non trovato')
           p.write_text(s,encoding='utf-8')
@@ -133,7 +213,7 @@ jobs:
               m.write_text(x,encoding='utf-8')
 
           sw=Path('site/app-v7/flutter_service_worker.js')
-          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v9','scorta-doterra-license-v3')
+          x=sw.read_text(encoding='utf-8').replace('scorta-doterra-pwa-v10','scorta-doterra-license-v4')
           sw.write_text(x,encoding='utf-8')
           PY
 
@@ -141,7 +221,9 @@ jobs:
           grep -q 'scorta-enhancements-v2.js' site/app-v7/index.html
           grep -q 'license-gate-v1.js' site/app-v7/index.html
           grep -q 'scorta-home-layout-fix' site/app-v6/index.html
-          grep -q 'serviceWorkerVersion: "scorta-pwa-v9"' site/app-v6/flutter_bootstrap.js
+          grep -q 'serviceWorkerVersion: "scorta-pwa-v10"' site/app-v6/flutter_bootstrap.js
+          test -s site/app-v6/icons/Icon-192.png
+          test -s site/app-v6/icons/Icon-512.png
 
       - name: Mantieni pagine e download esistenti
         run: |
