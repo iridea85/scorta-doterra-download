@@ -1,0 +1,120 @@
+
+(() => {
+  'use strict';
+
+  const INVENTORY_SUFFIX = 'doterra_inventory_v2';
+  const STYLE_ID = 'scortaInventoryRemoveV1Style';
+
+  const decodeRaw = (raw) => {
+    if (raw == null || raw === '') return { data: [], wrapped: true };
+    try {
+      const first = JSON.parse(raw);
+      if (Array.isArray(first)) return { data: first, wrapped: false };
+      if (typeof first === 'string') {
+        const second = JSON.parse(first);
+        if (Array.isArray(second)) return { data: second, wrapped: true };
+      }
+    } catch (_) {}
+    return { data: [], wrapped: true };
+  };
+
+  const encodeLike = (raw, data) => {
+    const wrapped = decodeRaw(raw).wrapped;
+    const json = JSON.stringify(data);
+    return wrapped ? JSON.stringify(json) : json;
+  };
+
+  const inventoryKeys = () => {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.endsWith(INVENTORY_SUFFIX)) keys.push(key);
+    }
+    return keys;
+  };
+
+  const productKey = (product) => String(product?.id || product?.name || 'unknown');
+
+  const readProduct = (key) => {
+    for (const storageKey of inventoryKeys()) {
+      const list = decodeRaw(localStorage.getItem(storageKey)).data;
+      const found = (Array.isArray(list) ? list : []).find((p) => productKey(p) === key);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const removeProduct = (key) => {
+    let removed = false;
+    for (const storageKey of inventoryKeys()) {
+      const raw = localStorage.getItem(storageKey);
+      const decoded = decodeRaw(raw);
+      if (!Array.isArray(decoded.data)) continue;
+      const updated = decoded.data.filter((product) => productKey(product) !== key);
+      if (updated.length !== decoded.data.length) {
+        localStorage.setItem(storageKey, encodeLike(raw, updated));
+        removed = true;
+      }
+    }
+    return removed;
+  };
+
+  const injectStyle = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .scp-remove-row{display:flex;justify-content:flex-end;margin-top:8px}
+      .scp-remove-inventory{
+        border:1px solid #e5caca;background:#fff8f8;color:#9a4f4f;border-radius:11px;
+        padding:8px 10px;font-size:11px;font-weight:800;-webkit-tap-highlight-color:transparent
+      }
+      .scp-remove-inventory:active{background:#f7eaea}
+    `;
+    document.head.appendChild(style);
+  };
+
+  const decorateCard = (card) => {
+    if (!card || card.querySelector('.scp-remove-inventory')) return;
+    const key = card.dataset.product;
+    if (!key) return;
+    const product = readProduct(key);
+    if (!product) return;
+
+    const row = document.createElement('div');
+    row.className = 'scp-remove-row';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'scp-remove-inventory';
+    button.textContent = 'Rimuovi dall’inventario';
+    row.appendChild(button);
+
+    const actions = card.querySelector('.scp-actions');
+    if (actions) actions.insertAdjacentElement('afterend', row);
+    else card.appendChild(row);
+
+    button.addEventListener('click', () => {
+      const current = readProduct(key);
+      if (!current) return;
+      const name = current.name || 'questo prodotto';
+      const ok = confirm(`Rimuovere ${name} dall’inventario?\n\nSe vuoi solo indicare che non ne hai più, lascia la quantità a 0: il prodotto resterà visibile come esaurito.`);
+      if (!ok) return;
+      if (!removeProduct(key)) return;
+      card.remove();
+      if (typeof window.scortaPlusShow === 'function') {
+        setTimeout(() => window.scortaPlusShow('home'), 0);
+      }
+    });
+  };
+
+  const decorate = () => {
+    injectStyle();
+    document.querySelectorAll('#scpInventoryList [data-product]').forEach(decorateCard);
+  };
+
+  const observer = new MutationObserver(decorate);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', decorate, { once: true });
+  else decorate();
+})();
