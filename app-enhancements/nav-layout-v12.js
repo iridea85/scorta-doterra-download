@@ -1,18 +1,18 @@
 (() => {
   'use strict';
 
-  const STYLE_ID = 'scortaNavV15Style';
-  const TOOLS_ID = 'scortaToolsBottomV15';
+  const STYLE_ID = 'scortaNavV16Style';
+  const TOOLS_ID = 'scortaToolsBottomV16';
 
   function injectStyle(){
     if (document.getElementById(STYLE_ID)) return;
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
-      /* Nasconde ogni vecchio pulsante flottante aggiunto in precedenza. */
+      /* Nasconde il vecchio pulsante flottante Strumenti/Catalogo. */
       #scortaPlusFab{display:none!important}
 
-      /* Strumenti occupa stabilmente il terzo centrale della barra Flutter. */
+      /* Strumenti occupa il terzo centrale della barra principale. */
       #${TOOLS_ID}{
         position:fixed!important;
         z-index:2147483646!important;
@@ -54,9 +54,8 @@
       }
       #${TOOLS_ID}:active{background:#f1e5ef!important}
 
-      /* Strumenti NON è più full-screen: termina esattamente sopra la barra.
-         In questo modo Inventario e Spesa del Flutter restano scoperti,
-         mentre il nostro tasto Strumenti resta sopra a entrambi. */
+      /* Il pannello Strumenti termina sopra la barra originale dell'app.
+         Non viene creata nessuna seconda barra dentro Strumenti. */
       #scortaPlusPanel{
         position:fixed!important;
         top:0!important;
@@ -76,7 +75,15 @@
   }
 
   function removeOldAddedButtons(){
-    ['scortaCatalogFloatV12','scortaToolsBottomV12','scortaToolsBottomV13','scortaToolsNav'].forEach(id=>document.getElementById(id)?.remove());
+    [
+      'scortaCatalogFloatV12',
+      'scortaToolsBottomV12',
+      'scortaToolsBottomV13',
+      'scortaToolsBottomV15',
+      'scortaToolsNav',
+      'scpPersistentBottomNav'
+    ].forEach(id=>document.getElementById(id)?.remove());
+    document.getElementById('scpPersistentBottomNavStyle')?.remove();
   }
 
   function ensureTools(){
