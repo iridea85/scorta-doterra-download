@@ -3,12 +3,7 @@
   'use strict';
 
   const INVENTORY_SUFFIX = 'doterra_inventory_v2';
-  const STYLE_ID = 'scortaStockNumberV1Style';
-
-  const escCss = (value) => {
-    if (window.CSS?.escape) return CSS.escape(String(value));
-    return String(value).replace(/(["\\])/g, '\\$1');
-  };
+  const STYLE_ID = 'scortaStockNumberV2Style';
 
   const decodeRaw = (raw) => {
     if (raw == null || raw === '') return { data: [], wrapped: true };
@@ -73,47 +68,62 @@
   };
 
   const injectStyle = () => {
+    document.getElementById('scortaStockNumberV1Style')?.remove();
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
       .scp-stock-editor{
-        display:flex;align-items:center;justify-content:space-between;gap:12px;
-        margin-top:11px;padding:10px 12px;border:1px solid #e2d8e5;border-radius:14px;background:#faf7fb
+        display:flex;align-items:center;gap:9px;margin:11px 0 2px;padding:11px 12px;
+        border:1px solid #dfd3e3;border-radius:15px;background:#faf6fb
       }
-      .scp-stock-editor label{font-size:12px;font-weight:850;color:#5f5662;line-height:1.2}
-      .scp-stock-editor label small{display:block;margin-top:2px;font-size:10px;font-weight:600;color:#8a818d}
+      .scp-stock-editor label{flex:1;min-width:0;font-size:12px;font-weight:900;color:#514956;line-height:1.2}
+      .scp-stock-editor label small{display:block;margin-top:3px;font-size:10px;font-weight:600;color:#8a818d;line-height:1.25}
+      .scp-stock-step{
+        width:38px;height:38px;border:1px solid #d4c7d8;border-radius:11px;background:#fff;color:#6e5578;
+        font-size:21px;font-weight:900;line-height:1;padding:0
+      }
       .scp-stock-input{
-        width:72px;height:40px;border:1px solid #cfc2d4;border-radius:12px;background:#fff;color:#332d36;
-        text-align:center;font-size:18px;font-weight:900;outline:none;padding:4px 6px
+        width:58px;height:40px;border:1px solid #c9bbce;border-radius:11px;background:#fff;color:#332d36;
+        text-align:center;font-size:18px;font-weight:950;outline:none;padding:4px
       }
       .scp-stock-input:focus{border-color:#80658b;box-shadow:0 0 0 3px rgba(110,85,120,.10)}
-      .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button{opacity:1}
-      .scp-stock-saved{font-size:10px;color:#4d7048;font-weight:800;margin-left:auto}
+      .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button{display:none}
+      .scp-stock-saved{display:block;margin-top:4px;font-size:10px;color:#4d7048;font-weight:800}
     `;
     document.head.appendChild(style);
   };
 
   const decorateCard = (card) => {
-    if (!card || card.querySelector('.scp-stock-editor')) return;
+    if (!card) return;
     const key = card.dataset.product;
     if (!key) return;
     const product = readProduct(key);
     if (!product) return;
 
-    const editor = document.createElement('div');
-    editor.className = 'scp-stock-editor';
-    editor.innerHTML = `
-      <label>Scorta chiusa<small>Quante confezioni hai ancora da aprire</small></label>
-      <input class="scp-stock-input" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="${Math.max(0, Number(product.stock || 0))}" aria-label="Numero confezioni in scorta">
-    `;
+    let editor = card.querySelector('.scp-stock-editor');
+    if (!editor) {
+      editor = document.createElement('div');
+      editor.className = 'scp-stock-editor';
+      editor.innerHTML = `
+        <label>Quantità nel mio inventario<small>Confezioni chiuse; l'eventuale confezione aperta è indicata a parte</small><span class="scp-stock-saved" hidden>Salvato</span></label>
+        <button class="scp-stock-step" type="button" data-stock-step="-1" aria-label="Diminuisci quantità">−</button>
+        <input class="scp-stock-input" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="${Math.max(0, Number(product.stock || 0))}" aria-label="Quantità nel mio inventario">
+        <button class="scp-stock-step" type="button" data-stock-step="1" aria-label="Aumenta quantità">+</button>
+      `;
 
-    const badges = card.querySelector('.scp-badges');
-    if (badges) badges.insertAdjacentElement('afterend', editor);
-    else card.appendChild(editor);
+      const row = card.querySelector('.scp-row');
+      if (row) row.insertAdjacentElement('afterend', editor);
+      else card.prepend(editor);
+    }
+
+    if (editor.dataset.stockWired === '1') return;
+    editor.dataset.stockWired = '1';
 
     const input = editor.querySelector('.scp-stock-input');
+    const savedNote = editor.querySelector('.scp-stock-saved');
     let lastSaved = Math.max(0, Number(product.stock || 0));
+    let timer = null;
 
     const commit = () => {
       const normalized = Math.max(0, Math.floor(Number(input.value) || 0));
@@ -123,20 +133,23 @@
       if (saved == null) return;
       lastSaved = saved;
 
-      const badge = card.querySelector('.scp-badge');
-      if (badge && /^Scorta\s/i.test(badge.textContent || '')) badge.textContent = `Scorta ${saved}`;
+      const badge = [...card.querySelectorAll('.scp-badge')]
+        .find((node) => /^Scorta\s/i.test(node.textContent || ''));
+      if (badge) badge.textContent = `Scorta ${saved}`;
 
-      let note = editor.querySelector('.scp-stock-saved');
-      if (!note) {
-        note = document.createElement('span');
-        note.className = 'scp-stock-saved';
-        editor.insertBefore(note, input);
+      if (savedNote) {
+        savedNote.hidden = false;
+        clearTimeout(editor._savedTimer);
+        editor._savedTimer = setTimeout(() => { savedNote.hidden = true; }, 900);
       }
-      note.textContent = 'Salvato';
-      clearTimeout(editor._savedTimer);
-      editor._savedTimer = setTimeout(() => note?.remove(), 900);
     };
 
+    const queueCommit = () => {
+      clearTimeout(timer);
+      timer = setTimeout(commit, 180);
+    };
+
+    input.addEventListener('input', queueCommit);
     input.addEventListener('change', commit);
     input.addEventListener('blur', commit);
     input.addEventListener('keydown', (event) => {
@@ -144,6 +157,15 @@
         commit();
         input.blur();
       }
+    });
+
+    editor.querySelectorAll('[data-stock-step]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const delta = Number(button.dataset.stockStep || 0);
+        const current = Math.max(0, Math.floor(Number(input.value) || 0));
+        input.value = String(Math.max(0, current + delta));
+        commit();
+      });
     });
   };
 
