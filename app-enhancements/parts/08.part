@@ -1,0 +1,152 @@
+
+(() => {
+  'use strict';
+
+  const INVENTORY_SUFFIX = 'doterra_inventory_v2';
+  const STYLE_ID = 'scortaOpenPackV1Style';
+  let scheduled = false;
+
+  const asInt = (value) => Math.max(0, Math.floor(Number(value) || 0));
+
+  const decodeRaw = (raw) => {
+    if (raw == null || raw === '') return { data: [], wrapped: true };
+    try {
+      const first = JSON.parse(raw);
+      if (Array.isArray(first)) return { data: first, wrapped: false };
+      if (typeof first === 'string') {
+        const second = JSON.parse(first);
+        if (Array.isArray(second)) return { data: second, wrapped: true };
+      }
+    } catch (_) {}
+    return { data: [], wrapped: true };
+  };
+
+  const encodeLike = (raw, data) => {
+    const json = JSON.stringify(data);
+    return decodeRaw(raw).wrapped ? JSON.stringify(json) : json;
+  };
+
+  const inventoryKeys = () => {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.endsWith(INVENTORY_SUFFIX)) keys.push(key);
+    }
+    return keys;
+  };
+
+  const productKey = (product) => String(product?.id || product?.name || 'unknown');
+
+  const updateOpenedPackage = (key, closedValue, openedValue) => {
+    let changed = false;
+    for (const storageKey of inventoryKeys()) {
+      const raw = localStorage.getItem(storageKey);
+      const decoded = decodeRaw(raw);
+      if (!Array.isArray(decoded.data)) continue;
+      let touched = false;
+      const updated = decoded.data.map((product) => {
+        if (productKey(product) !== key) return product;
+        touched = true;
+        const closed = Math.max(0, asInt(closedValue) - 1);
+        const opened = asInt(openedValue) + 1;
+        const manualQty = asInt(product.shoppingQuantity || 0);
+        return {
+          ...product,
+          stock: closed,
+          openedCount: opened,
+          opened: opened > 0,
+          shoppingDismissed: product.autoReorder === true
+            ? false
+            : (manualQty > 0 ? false : true),
+        };
+      });
+      if (touched) {
+        localStorage.setItem(storageKey, encodeLike(raw, updated));
+        changed = true;
+      }
+    }
+    return changed;
+  };
+
+  const injectStyle = () => {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .scp-open-pack{
+        width:100%;margin-top:10px;border:0;border-radius:12px;background:#6e5578;color:#fff;
+        padding:11px 12px;font-size:12px;font-weight:900;text-align:center;-webkit-tap-highlight-color:transparent
+      }
+      .scp-open-pack:active{transform:translateY(1px)}
+      .scp-open-pack[disabled]{background:#c9bdcc;color:#fff;opacity:.75}
+      .scp-open-pack-note{display:block;margin-top:5px;font-size:10px;line-height:1.35;color:#7b717e;text-align:center}
+    `;
+    document.head.appendChild(style);
+  };
+
+  const decorateCard = (card) => {
+    const key = card?.dataset?.product;
+    if (!key) return;
+    const editor = card.querySelector('.scp-stock-editor');
+    if (!editor || editor.querySelector('.scp-open-pack')) return;
+
+    const closedInput = editor.querySelector('[data-count-input="closed"]');
+    const openedInput = editor.querySelector('[data-count-input="opened"]');
+    if (!closedInput || !openedInput) return;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'scp-open-pack';
+    button.textContent = 'Apri una confezione';
+
+    const note = document.createElement('span');
+    note.className = 'scp-open-pack-note';
+    note.textContent = 'Sposta automaticamente 1 da Chiusi ad Aperti.';
+
+    const autoWrap = editor.querySelector('.scp-auto-wrap');
+    if (autoWrap) {
+      autoWrap.insertAdjacentElement('beforebegin', button);
+      button.insertAdjacentElement('afterend', note);
+    } else {
+      editor.append(button, note);
+    }
+
+    const refreshDisabled = () => {
+      button.disabled = asInt(closedInput.value) <= 0;
+    };
+    refreshDisabled();
+    closedInput.addEventListener('input', refreshDisabled);
+    closedInput.addEventListener('change', refreshDisabled);
+
+    button.addEventListener('click', () => {
+      const closed = asInt(closedInput.value);
+      const opened = asInt(openedInput.value);
+      if (closed <= 0) {
+        alert('Non ci sono confezioni chiuse da aprire.');
+        refreshDisabled();
+        return;
+      }
+      if (!updateOpenedPackage(key, closed, opened)) return;
+      if (typeof window.scortaPlusShow === 'function') window.scortaPlusShow('home');
+    });
+  };
+
+  const decorate = () => {
+    scheduled = false;
+    injectStyle();
+    document.querySelectorAll('#scortaPlusPanel [data-product]').forEach(decorateCard);
+  };
+
+  const scheduleDecorate = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(decorate);
+  };
+
+  new MutationObserver(scheduleDecorate)
+    .observe(document.documentElement, { childList: true, subtree: true });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleDecorate, { once: true });
+  else scheduleDecorate();
+  setTimeout(scheduleDecorate, 500);
+})();
