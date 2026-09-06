@@ -1,0 +1,9 @@
+Scorta doTERRA stats readout - 2026-09-06 14:42 Europe/Rome
+views_total=9
+unique_total=3
+views_day_20260906=0 (counter key not created: no landing-page visit registered today)
+unique_day_20260906=0 (counter key not created: no landing-page unique registered today)
+app_opens=5
+android_clicks=1
+ios_clicks=4
+last_visit=2026-09-05 22:32:50 Europe/Rome
