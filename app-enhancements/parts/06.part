@@ -3,7 +3,7 @@
   'use strict';
 
   const INVENTORY_SUFFIX = 'doterra_inventory_v2';
-  const STYLE_ID = 'scortaStockNumberV3Style';
+  const STYLE_ID = 'scortaStockNumberV4Style';
 
   const decodeRaw = (raw) => {
     if (raw == null || raw === '') return { data: [], wrapped: true };
@@ -24,6 +24,8 @@
     return wrapped ? JSON.stringify(json) : json;
   };
 
+  const asInt = (value, min = 0) => Math.max(min, Math.floor(Number(value) || 0));
+
   const inventoryKeys = () => {
     const keys = [];
     for (let i = 0; i < localStorage.length; i += 1) {
@@ -35,19 +37,58 @@
 
   const productKey = (product) => String(product?.id || product?.name || 'unknown');
 
+  const normalizeProduct = (product) => {
+    const openedCount = product.openedCount == null
+      ? (product.opened === true ? 1 : 0)
+      : asInt(product.openedCount);
+    const autoReorder = product.autoReorder === true;
+    const manualQty = asInt(product.shoppingQuantity || 0);
+    return {
+      ...product,
+      stock: asInt(product.stock || 0),
+      openedCount,
+      opened: openedCount > 0,
+      autoReorder,
+      targetReserve: asInt(product.targetReserve ?? 1, 1),
+      shoppingDismissed: autoReorder ? product.shoppingDismissed === true : (manualQty > 0 ? false : true),
+    };
+  };
+
+  const ensureModel = () => {
+    for (const storageKey of inventoryKeys()) {
+      const raw = localStorage.getItem(storageKey);
+      const decoded = decodeRaw(raw);
+      if (!Array.isArray(decoded.data)) continue;
+      let changed = false;
+      const updated = decoded.data.map((product) => {
+        const normalized = normalizeProduct(product);
+        const beforeOpenedCount = product.openedCount == null ? null : asInt(product.openedCount);
+        if (
+          beforeOpenedCount !== normalized.openedCount ||
+          product.opened !== normalized.opened ||
+          product.autoReorder !== normalized.autoReorder ||
+          asInt(product.targetReserve ?? 1, 1) !== normalized.targetReserve ||
+          product.shoppingDismissed !== normalized.shoppingDismissed ||
+          asInt(product.stock || 0) !== normalized.stock
+        ) changed = true;
+        return normalized;
+      });
+      if (changed) localStorage.setItem(storageKey, encodeLike(raw, updated));
+    }
+  };
+
   const readProduct = (key) => {
     for (const storageKey of inventoryKeys()) {
       const list = decodeRaw(localStorage.getItem(storageKey)).data;
       const found = (Array.isArray(list) ? list : []).find((p) => productKey(p) === key);
-      if (found) return found;
+      if (found) return normalizeProduct(found);
     }
     return null;
   };
 
-  const saveStock = (key, value) => {
-    const next = Math.max(0, Math.floor(Number(value) || 0));
+  const updateProduct = (key, updater) => {
+    let result = null;
     let changed = false;
-
     for (const storageKey of inventoryKeys()) {
       const raw = localStorage.getItem(storageKey);
       const decoded = decodeRaw(raw);
@@ -56,16 +97,47 @@
       const updated = decoded.data.map((product) => {
         if (productKey(product) !== key) return product;
         touched = true;
-        return { ...product, stock: next };
+        const next = normalizeProduct(updater(normalizeProduct(product)));
+        result = next;
+        return next;
       });
       if (touched) {
         localStorage.setItem(storageKey, encodeLike(raw, updated));
         changed = true;
       }
     }
-
-    return changed ? next : null;
+    return changed ? result : null;
   };
+
+  const saveClosed = (key, value) => updateProduct(key, (product) => {
+    const stock = asInt(value);
+    const manualQty = asInt(product.shoppingQuantity || 0);
+    return {
+      ...product,
+      stock,
+      shoppingDismissed: product.autoReorder === true ? false : (manualQty > 0 ? false : true),
+    };
+  });
+
+  const saveOpened = (key, value) => updateProduct(key, (product) => {
+    const openedCount = asInt(value);
+    return { ...product, openedCount, opened: openedCount > 0 };
+  });
+
+  const saveAutoReorder = (key, enabled) => updateProduct(key, (product) => {
+    const manualQty = asInt(product.shoppingQuantity || 0);
+    return {
+      ...product,
+      autoReorder: !!enabled,
+      shoppingDismissed: enabled ? false : (manualQty > 0 ? false : true),
+    };
+  });
+
+  const saveThreshold = (key, value) => updateProduct(key, (product) => ({
+    ...product,
+    targetReserve: asInt(value, 1),
+    shoppingDismissed: product.autoReorder === true ? false : product.shoppingDismissed,
+  }));
 
   const removeProduct = (key) => {
     let removed = false;
@@ -83,36 +155,63 @@
   };
 
   const injectStyle = () => {
-    document.getElementById('scortaStockNumberV1Style')?.remove();
-    document.getElementById('scortaStockNumberV2Style')?.remove();
+    ['scortaStockNumberV1Style','scortaStockNumberV2Style','scortaStockNumberV3Style'].forEach(id=>document.getElementById(id)?.remove());
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .scp-stock-editor{
-        display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:11px 0 2px;padding:11px 12px;
-        border:1px solid #dfd3e3;border-radius:15px;background:#faf6fb
-      }
-      .scp-stock-editor label{flex:1;min-width:0;font-size:12px;font-weight:900;color:#514956;line-height:1.2}
-      .scp-stock-editor label small{display:block;margin-top:3px;font-size:10px;font-weight:600;color:#8a818d;line-height:1.25}
-      .scp-stock-step{
-        width:38px;height:38px;border:1px solid #d4c7d8;border-radius:11px;background:#fff;color:#6e5578;
-        font-size:21px;font-weight:900;line-height:1;padding:0
-      }
-      .scp-stock-input{
-        width:58px;height:40px;border:1px solid #c9bbce;border-radius:11px;background:#fff;color:#332d36;
-        text-align:center;font-size:18px;font-weight:950;outline:none;padding:4px
-      }
+      #scortaPlusPanel [data-action="opened"]{display:none!important}
+      #scortaPlusPanel [data-filter="below"]{display:none!important}
+      .scp-stock-editor{margin:11px 0 2px;padding:12px;border:1px solid #dfd3e3;border-radius:16px;background:#faf6fb}
+      .scp-stock-heading{font-size:12px;font-weight:900;color:#514956;margin-bottom:9px}
+      .scp-stock-counts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .scp-stock-box{background:#fff;border:1px solid #e1d7e4;border-radius:14px;padding:9px}
+      .scp-stock-box-title{font-size:11px;font-weight:900;color:#675e6b;margin-bottom:7px;text-align:center}
+      .scp-stock-control{display:grid;grid-template-columns:34px 1fr 34px;gap:6px;align-items:center}
+      .scp-stock-step{width:34px;height:36px;border:1px solid #d4c7d8;border-radius:10px;background:#fff;color:#6e5578;font-size:20px;font-weight:900;line-height:1;padding:0}
+      .scp-stock-input{width:100%;min-width:0;height:36px;border:1px solid #c9bbce;border-radius:10px;background:#fff;color:#332d36;text-align:center;font-size:17px;font-weight:950;outline:none;padding:3px}
       .scp-stock-input:focus{border-color:#80658b;box-shadow:0 0 0 3px rgba(110,85,120,.10)}
       .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button{display:none}
-      .scp-stock-saved{display:block;margin-top:4px;font-size:10px;color:#4d7048;font-weight:800}
-      .scp-stock-editor .scp-remove-inventory{
-        flex:0 0 100%;width:100%;margin-top:3px;border:1px solid #e7cfd2;background:#fff8f8;color:#934a51;
-        border-radius:11px;padding:9px 10px;font-size:11px;font-weight:850;text-align:center;-webkit-tap-highlight-color:transparent
-      }
+      .scp-auto-wrap{margin-top:10px;border-top:1px solid #e5dce7;padding-top:10px}
+      .scp-auto-toggle-row{display:flex;align-items:center;gap:10px;cursor:pointer}
+      .scp-auto-toggle{width:20px;height:20px;accent-color:#6e5578;flex:0 0 auto}
+      .scp-auto-copy{flex:1;min-width:0}.scp-auto-copy b{display:block;font-size:12px;color:#514956}.scp-auto-copy small{display:block;font-size:10px;color:#817884;line-height:1.35;margin-top:2px}
+      .scp-threshold-row{display:flex;align-items:center;gap:7px;margin-top:9px;padding:9px;background:#fff;border:1px solid #e1d7e4;border-radius:13px}
+      .scp-threshold-row[hidden]{display:none!important}.scp-threshold-label{flex:1;font-size:11px;font-weight:850;color:#665d69}
+      .scp-threshold-input{width:52px;height:34px;border:1px solid #c9bbce;border-radius:10px;text-align:center;font-size:16px;font-weight:900;color:#332d36}
+      .scp-threshold-step{width:32px;height:34px;border:1px solid #d4c7d8;border-radius:9px;background:#fff;color:#6e5578;font-size:18px;font-weight:900}
+      .scp-auto-status{margin-top:7px;font-size:10px;line-height:1.4;color:#766d79}
+      .scp-auto-status.active{color:#4d7048;font-weight:750}
+      .scp-stock-saved{display:inline-block;margin-top:7px;font-size:10px;color:#4d7048;font-weight:800}
+      .scp-stock-saved[hidden]{display:none!important}
+      .scp-stock-editor .scp-remove-inventory{width:100%;margin-top:10px;border:1px solid #e7cfd2;background:#fff8f8;color:#934a51;border-radius:11px;padding:9px 10px;font-size:11px;font-weight:850;text-align:center;-webkit-tap-highlight-color:transparent}
       .scp-stock-editor .scp-remove-inventory:active{background:#f7eaea}
+      @media(max-width:360px){.scp-stock-counts{grid-template-columns:1fr}.scp-stock-control{grid-template-columns:38px 1fr 38px}}
     `;
     document.head.appendChild(style);
+  };
+
+  const updateBadges = (card, product) => {
+    const badges = card.querySelector('.scp-badges');
+    if (!badges) return;
+    const closed = asInt(product.stock || 0);
+    const opened = asInt(product.openedCount || 0);
+    let closedBadge = [...badges.querySelectorAll('.scp-badge')].find(node => /^Scorta\s/i.test(node.textContent || '') || /^Chiusi\s/i.test(node.textContent || ''));
+    if (!closedBadge) {
+      closedBadge = document.createElement('span');
+      closedBadge.className = 'scp-badge';
+      badges.prepend(closedBadge);
+    }
+    closedBadge.textContent = `Chiusi ${closed}`;
+
+    let openedBadge = [...badges.querySelectorAll('.scp-badge')].find(node => /^Aperto$/i.test((node.textContent || '').trim()) || /^Aperti\s/i.test(node.textContent || ''));
+    if (!openedBadge) {
+      openedBadge = document.createElement('span');
+      openedBadge.className = 'scp-badge';
+      closedBadge.insertAdjacentElement('afterend', openedBadge);
+    }
+    openedBadge.textContent = `Aperti ${opened}`;
+    openedBadge.className = opened > 0 ? 'scp-badge green' : 'scp-badge';
   };
 
   const decorateCard = (card) => {
@@ -122,96 +221,157 @@
     const product = readProduct(key);
     if (!product) return;
 
+    updateBadges(card, product);
+    card.querySelector('[data-action="opened"]')?.remove();
+
     let editor = card.querySelector('.scp-stock-editor');
+    if (editor && editor.dataset.stockUi !== '4') {
+      editor.remove();
+      editor = null;
+    }
     if (!editor) {
       editor = document.createElement('div');
       editor.className = 'scp-stock-editor';
+      editor.dataset.stockUi = '4';
       editor.innerHTML = `
-        <label>Quantità nel mio inventario<small>Confezioni chiuse; l'eventuale confezione aperta è indicata a parte</small><span class="scp-stock-saved" hidden>Salvato</span></label>
-        <button class="scp-stock-step" type="button" data-stock-step="-1" aria-label="Diminuisci quantità">−</button>
-        <input class="scp-stock-input" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" value="${Math.max(0, Number(product.stock || 0))}" aria-label="Quantità nel mio inventario">
-        <button class="scp-stock-step" type="button" data-stock-step="1" aria-label="Aumenta quantità">+</button>
+        <div class="scp-stock-heading">Le mie quantità</div>
+        <div class="scp-stock-counts">
+          <div class="scp-stock-box">
+            <div class="scp-stock-box-title">Chiusi</div>
+            <div class="scp-stock-control">
+              <button class="scp-stock-step" type="button" data-count-step="closed:-1">−</button>
+              <input class="scp-stock-input" data-count-input="closed" type="number" min="0" step="1" inputmode="numeric" value="${asInt(product.stock || 0)}" aria-label="Confezioni chiuse">
+              <button class="scp-stock-step" type="button" data-count-step="closed:1">+</button>
+            </div>
+          </div>
+          <div class="scp-stock-box">
+            <div class="scp-stock-box-title">Aperti</div>
+            <div class="scp-stock-control">
+              <button class="scp-stock-step" type="button" data-count-step="opened:-1">−</button>
+              <input class="scp-stock-input" data-count-input="opened" type="number" min="0" step="1" inputmode="numeric" value="${asInt(product.openedCount || 0)}" aria-label="Confezioni aperte">
+              <button class="scp-stock-step" type="button" data-count-step="opened:1">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="scp-auto-wrap">
+          <label class="scp-auto-toggle-row">
+            <input class="scp-auto-toggle" type="checkbox" ${product.autoReorder === true ? 'checked' : ''}>
+            <span class="scp-auto-copy"><b>Riordino automatico</b><small>Attivalo solo sui prodotti che vuoi ricomprare quando la scorta chiusa scende.</small></span>
+          </label>
+          <div class="scp-threshold-row" ${product.autoReorder === true ? '' : 'hidden'}>
+            <span class="scp-threshold-label">Soglia minima chiusi</span>
+            <button class="scp-threshold-step" type="button" data-threshold-step="-1">−</button>
+            <input class="scp-threshold-input" type="number" min="1" step="1" inputmode="numeric" value="${asInt(product.targetReserve ?? 1, 1)}" aria-label="Soglia minima chiusi">
+            <button class="scp-threshold-step" type="button" data-threshold-step="1">+</button>
+          </div>
+          <div class="scp-auto-status"></div>
+        </div>
+        <span class="scp-stock-saved" hidden>Salvato</span>
         <button class="scp-remove-inventory" type="button">Rimuovi dall’inventario</button>
       `;
-
       const row = card.querySelector('.scp-row');
       if (row) row.insertAdjacentElement('afterend', editor);
       else card.prepend(editor);
-    } else if (!editor.querySelector('.scp-remove-inventory')) {
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'scp-remove-inventory';
-      remove.textContent = 'Rimuovi dall’inventario';
-      editor.appendChild(remove);
     }
 
+    const closedInput = editor.querySelector('[data-count-input="closed"]');
+    const openedInput = editor.querySelector('[data-count-input="opened"]');
+    const autoToggle = editor.querySelector('.scp-auto-toggle');
+    const thresholdRow = editor.querySelector('.scp-threshold-row');
+    const thresholdInput = editor.querySelector('.scp-threshold-input');
+    const status = editor.querySelector('.scp-auto-status');
+    const savedNote = editor.querySelector('.scp-stock-saved');
+
+    const refreshStatus = (current = readProduct(key)) => {
+      if (!current) return;
+      updateBadges(card, current);
+      closedInput.value = String(asInt(current.stock || 0));
+      openedInput.value = String(asInt(current.openedCount || 0));
+      autoToggle.checked = current.autoReorder === true;
+      thresholdInput.value = String(asInt(current.targetReserve ?? 1, 1));
+      thresholdRow.hidden = current.autoReorder !== true;
+      if (current.autoReorder === true) {
+        const threshold = asInt(current.targetReserve ?? 1, 1);
+        const closed = asInt(current.stock || 0);
+        status.classList.add('active');
+        status.textContent = closed < threshold
+          ? `Sotto soglia: viene aggiunto automaticamente alla Spesa fino a riportare i chiusi a ${threshold}.`
+          : `Attivo: entrerà nella Spesa quando i chiusi scendono sotto ${threshold}.`;
+      } else {
+        status.classList.remove('active');
+        status.textContent = 'Disattivato: anche arrivando a 0 non entrerà da solo nella Spesa.';
+      }
+    };
+
+    const showSaved = () => {
+      savedNote.hidden = false;
+      clearTimeout(editor._savedTimer);
+      editor._savedTimer = setTimeout(() => { savedNote.hidden = true; }, 800);
+    };
+
+    refreshStatus(product);
     if (editor.dataset.stockWired === '1') return;
     editor.dataset.stockWired = '1';
 
-    const input = editor.querySelector('.scp-stock-input');
-    const savedNote = editor.querySelector('.scp-stock-saved');
-    let lastSaved = Math.max(0, Number(product.stock || 0));
-    let timer = null;
-
-    const commit = () => {
-      const normalized = Math.max(0, Math.floor(Number(input.value) || 0));
-      input.value = String(normalized);
-      if (normalized === lastSaved) return;
-      const saved = saveStock(key, normalized);
-      if (saved == null) return;
-      lastSaved = saved;
-
-      const badge = [...card.querySelectorAll('.scp-badge')]
-        .find((node) => /^Scorta\s/i.test(node.textContent || ''));
-      if (badge) badge.textContent = `Scorta ${saved}`;
-
-      if (savedNote) {
-        savedNote.hidden = false;
-        clearTimeout(editor._savedTimer);
-        editor._savedTimer = setTimeout(() => { savedNote.hidden = true; }, 900);
-      }
+    const commitClosed = () => {
+      const saved = saveClosed(key, closedInput.value);
+      if (!saved) return;
+      refreshStatus(saved); showSaved();
+    };
+    const commitOpened = () => {
+      const saved = saveOpened(key, openedInput.value);
+      if (!saved) return;
+      refreshStatus(saved); showSaved();
+    };
+    const commitThreshold = () => {
+      const saved = saveThreshold(key, thresholdInput.value);
+      if (!saved) return;
+      refreshStatus(saved); showSaved();
     };
 
-    const queueCommit = () => {
-      clearTimeout(timer);
-      timer = setTimeout(commit, 180);
-    };
+    let closedTimer = null, openedTimer = null, thresholdTimer = null;
+    closedInput.addEventListener('input', () => { clearTimeout(closedTimer); closedTimer = setTimeout(commitClosed, 180); });
+    closedInput.addEventListener('change', commitClosed);
+    closedInput.addEventListener('blur', commitClosed);
+    openedInput.addEventListener('input', () => { clearTimeout(openedTimer); openedTimer = setTimeout(commitOpened, 180); });
+    openedInput.addEventListener('change', commitOpened);
+    openedInput.addEventListener('blur', commitOpened);
+    thresholdInput.addEventListener('input', () => { clearTimeout(thresholdTimer); thresholdTimer = setTimeout(commitThreshold, 180); });
+    thresholdInput.addEventListener('change', commitThreshold);
+    thresholdInput.addEventListener('blur', commitThreshold);
 
-    input.addEventListener('input', queueCommit);
-    input.addEventListener('change', commit);
-    input.addEventListener('blur', commit);
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        commit();
-        input.blur();
-      }
+    editor.querySelectorAll('[data-count-step]').forEach(button => button.addEventListener('click', () => {
+      const [kind, rawDelta] = String(button.dataset.countStep || '').split(':');
+      const input = kind === 'opened' ? openedInput : closedInput;
+      input.value = String(Math.max(0, asInt(input.value) + Number(rawDelta || 0)));
+      if (kind === 'opened') commitOpened(); else commitClosed();
+    }));
+
+    autoToggle.addEventListener('change', () => {
+      const saved = saveAutoReorder(key, autoToggle.checked);
+      if (!saved) return;
+      refreshStatus(saved); showSaved();
     });
 
-    editor.querySelectorAll('[data-stock-step]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const delta = Number(button.dataset.stockStep || 0);
-        const current = Math.max(0, Math.floor(Number(input.value) || 0));
-        input.value = String(Math.max(0, current + delta));
-        commit();
-      });
-    });
+    editor.querySelectorAll('[data-threshold-step]').forEach(button => button.addEventListener('click', () => {
+      thresholdInput.value = String(Math.max(1, asInt(thresholdInput.value, 1) + Number(button.dataset.thresholdStep || 0)));
+      commitThreshold();
+    }));
 
     editor.querySelector('.scp-remove-inventory')?.addEventListener('click', () => {
       const current = readProduct(key);
       if (!current) return;
       const name = current.name || 'questo prodotto';
-      const ok = confirm(`Rimuovere ${name} dall’inventario?\n\nSe vuoi solo indicare che non ne hai più, lascia la quantità a 0: il prodotto resterà visibile come esaurito.`);
+      const ok = confirm(`Rimuovere ${name} dall’inventario?\n\nSe vuoi solo indicare che non ne hai più, lascia Chiusi e Aperti a 0: il prodotto resterà visibile.`);
       if (!ok) return;
       if (!removeProduct(key)) return;
-      if (typeof window.scortaPlusShow === 'function') {
-        window.scortaPlusShow('home');
-      } else {
-        card.remove();
-      }
+      if (typeof window.scortaPlusShow === 'function') window.scortaPlusShow('home');
+      else card.remove();
     });
   };
 
   const decorate = () => {
+    ensureModel();
     injectStyle();
     document.querySelectorAll('#scortaPlusPanel [data-product]').forEach(decorateCard);
   };
@@ -221,4 +381,6 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', decorate, { once: true });
   else decorate();
+  setTimeout(decorate, 300);
+  setTimeout(decorate, 1000);
 })();
