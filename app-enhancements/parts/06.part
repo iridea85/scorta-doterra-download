@@ -1,9 +1,13 @@
-
 (() => {
   'use strict';
 
   const INVENTORY_SUFFIX = 'doterra_inventory_v2';
-  const STYLE_ID = 'scortaStockNumberV4Style';
+  const STYLE_ID = 'scortaStockNumberV5Style';
+  let migrated = false;
+  let scheduled = false;
+  let observer = null;
+
+  const asInt = (value, min = 0) => Math.max(min, Math.floor(Number(value) || 0));
 
   const decodeRaw = (raw) => {
     if (raw == null || raw === '') return { data: [], wrapped: true };
@@ -19,12 +23,9 @@
   };
 
   const encodeLike = (raw, data) => {
-    const wrapped = decodeRaw(raw).wrapped;
     const json = JSON.stringify(data);
-    return wrapped ? JSON.stringify(json) : json;
+    return decodeRaw(raw).wrapped ? JSON.stringify(json) : json;
   };
-
-  const asInt = (value, min = 0) => Math.max(min, Math.floor(Number(value) || 0));
 
   const inventoryKeys = () => {
     const keys = [];
@@ -38,40 +39,43 @@
   const productKey = (product) => String(product?.id || product?.name || 'unknown');
 
   const normalizeProduct = (product) => {
-    const openedCount = product.openedCount == null
-      ? (product.opened === true ? 1 : 0)
+    const openedCount = product?.openedCount == null
+      ? (product?.opened === true ? 1 : 0)
       : asInt(product.openedCount);
-    const autoReorder = product.autoReorder === true;
-    const manualQty = asInt(product.shoppingQuantity || 0);
+    const autoReorder = product?.autoReorder === true;
+    const manualQty = asInt(product?.shoppingQuantity || 0);
     return {
       ...product,
-      stock: asInt(product.stock || 0),
+      stock: asInt(product?.stock || 0),
       openedCount,
       opened: openedCount > 0,
       autoReorder,
-      targetReserve: asInt(product.targetReserve ?? 1, 1),
-      shoppingDismissed: autoReorder ? product.shoppingDismissed === true : (manualQty > 0 ? false : true),
+      targetReserve: asInt(product?.targetReserve ?? 1, 1),
+      shoppingDismissed: autoReorder
+        ? product?.shoppingDismissed === true
+        : (manualQty > 0 ? false : true),
     };
   };
 
-  const ensureModel = () => {
+  const migrateModelOnce = () => {
+    if (migrated) return;
+    migrated = true;
     for (const storageKey of inventoryKeys()) {
       const raw = localStorage.getItem(storageKey);
       const decoded = decodeRaw(raw);
       if (!Array.isArray(decoded.data)) continue;
       let changed = false;
       const updated = decoded.data.map((product) => {
-        const normalized = normalizeProduct(product);
-        const beforeOpenedCount = product.openedCount == null ? null : asInt(product.openedCount);
+        const next = normalizeProduct(product);
         if (
-          beforeOpenedCount !== normalized.openedCount ||
-          product.opened !== normalized.opened ||
-          product.autoReorder !== normalized.autoReorder ||
-          asInt(product.targetReserve ?? 1, 1) !== normalized.targetReserve ||
-          product.shoppingDismissed !== normalized.shoppingDismissed ||
-          asInt(product.stock || 0) !== normalized.stock
+          product.openedCount == null ||
+          product.opened !== next.opened ||
+          product.autoReorder !== next.autoReorder ||
+          asInt(product.targetReserve ?? 1, 1) !== next.targetReserve ||
+          product.shoppingDismissed !== next.shoppingDismissed ||
+          asInt(product.stock || 0) !== next.stock
         ) changed = true;
-        return normalized;
+        return next;
       });
       if (changed) localStorage.setItem(storageKey, encodeLike(raw, updated));
     }
@@ -109,36 +113,6 @@
     return changed ? result : null;
   };
 
-  const saveClosed = (key, value) => updateProduct(key, (product) => {
-    const stock = asInt(value);
-    const manualQty = asInt(product.shoppingQuantity || 0);
-    return {
-      ...product,
-      stock,
-      shoppingDismissed: product.autoReorder === true ? false : (manualQty > 0 ? false : true),
-    };
-  });
-
-  const saveOpened = (key, value) => updateProduct(key, (product) => {
-    const openedCount = asInt(value);
-    return { ...product, openedCount, opened: openedCount > 0 };
-  });
-
-  const saveAutoReorder = (key, enabled) => updateProduct(key, (product) => {
-    const manualQty = asInt(product.shoppingQuantity || 0);
-    return {
-      ...product,
-      autoReorder: !!enabled,
-      shoppingDismissed: enabled ? false : (manualQty > 0 ? false : true),
-    };
-  });
-
-  const saveThreshold = (key, value) => updateProduct(key, (product) => ({
-    ...product,
-    targetReserve: asInt(value, 1),
-    shoppingDismissed: product.autoReorder === true ? false : product.shoppingDismissed,
-  }));
-
   const removeProduct = (key) => {
     let removed = false;
     for (const storageKey of inventoryKeys()) {
@@ -154,8 +128,16 @@
     return removed;
   };
 
+  const effectiveShopping = (product) => {
+    const manual = asInt(product?.shoppingQuantity || 0);
+    if (manual > 0) return manual;
+    if (product?.shoppingDismissed === true) return 0;
+    return Math.max(0, asInt(product?.targetReserve ?? 1, 1) - asInt(product?.stock || 0));
+  };
+
   const injectStyle = () => {
-    ['scortaStockNumberV1Style','scortaStockNumberV2Style','scortaStockNumberV3Style'].forEach(id=>document.getElementById(id)?.remove());
+    ['scortaStockNumberV1Style','scortaStockNumberV2Style','scortaStockNumberV3Style','scortaStockNumberV4Style']
+      .forEach((id) => document.getElementById(id)?.remove());
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
@@ -170,8 +152,8 @@
       .scp-stock-control{display:grid;grid-template-columns:34px 1fr 34px;gap:6px;align-items:center}
       .scp-stock-step{width:34px;height:36px;border:1px solid #d4c7d8;border-radius:10px;background:#fff;color:#6e5578;font-size:20px;font-weight:900;line-height:1;padding:0}
       .scp-stock-input{width:100%;min-width:0;height:36px;border:1px solid #c9bbce;border-radius:10px;background:#fff;color:#332d36;text-align:center;font-size:17px;font-weight:950;outline:none;padding:3px}
-      .scp-stock-input:focus{border-color:#80658b;box-shadow:0 0 0 3px rgba(110,85,120,.10)}
-      .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button{display:none}
+      .scp-stock-input:focus,.scp-threshold-input:focus{border-color:#80658b;box-shadow:0 0 0 3px rgba(110,85,120,.10);outline:none}
+      .scp-stock-input::-webkit-inner-spin-button,.scp-stock-input::-webkit-outer-spin-button,.scp-threshold-input::-webkit-inner-spin-button,.scp-threshold-input::-webkit-outer-spin-button{display:none}
       .scp-auto-wrap{margin-top:10px;border-top:1px solid #e5dce7;padding-top:10px}
       .scp-auto-toggle-row{display:flex;align-items:center;gap:10px;cursor:pointer}
       .scp-auto-toggle{width:20px;height:20px;accent-color:#6e5578;flex:0 0 auto}
@@ -180,10 +162,8 @@
       .scp-threshold-row[hidden]{display:none!important}.scp-threshold-label{flex:1;font-size:11px;font-weight:850;color:#665d69}
       .scp-threshold-input{width:52px;height:34px;border:1px solid #c9bbce;border-radius:10px;text-align:center;font-size:16px;font-weight:900;color:#332d36}
       .scp-threshold-step{width:32px;height:34px;border:1px solid #d4c7d8;border-radius:9px;background:#fff;color:#6e5578;font-size:18px;font-weight:900}
-      .scp-auto-status{margin-top:7px;font-size:10px;line-height:1.4;color:#766d79}
-      .scp-auto-status.active{color:#4d7048;font-weight:750}
-      .scp-stock-saved{display:inline-block;margin-top:7px;font-size:10px;color:#4d7048;font-weight:800}
-      .scp-stock-saved[hidden]{display:none!important}
+      .scp-auto-status{margin-top:7px;font-size:10px;line-height:1.4;color:#766d79}.scp-auto-status.active{color:#4d7048;font-weight:750}
+      .scp-stock-saved{display:inline-block;margin-top:7px;font-size:10px;color:#4d7048;font-weight:800}.scp-stock-saved[hidden]{display:none!important}
       .scp-stock-editor .scp-remove-inventory{width:100%;margin-top:10px;border:1px solid #e7cfd2;background:#fff8f8;color:#934a51;border-radius:11px;padding:9px 10px;font-size:11px;font-weight:850;text-align:center;-webkit-tap-highlight-color:transparent}
       .scp-stock-editor .scp-remove-inventory:active{background:#f7eaea}
       @media(max-width:360px){.scp-stock-counts{grid-template-columns:1fr}.scp-stock-control{grid-template-columns:38px 1fr 38px}}
@@ -191,32 +171,51 @@
     document.head.appendChild(style);
   };
 
+  const setText = (node, value) => {
+    if (node && node.textContent !== value) node.textContent = value;
+  };
+
   const updateBadges = (card, product) => {
     const badges = card.querySelector('.scp-badges');
     if (!badges) return;
     const closed = asInt(product.stock || 0);
     const opened = asInt(product.openedCount || 0);
-    let closedBadge = [...badges.querySelectorAll('.scp-badge')].find(node => /^Scorta\s/i.test(node.textContent || '') || /^Chiusi\s/i.test(node.textContent || ''));
+    const shopping = effectiveShopping(product);
+
+    let closedBadge = [...badges.querySelectorAll('.scp-badge')]
+      .find((node) => /^(Scorta|Chiusi)\s/i.test(node.textContent || ''));
     if (!closedBadge) {
       closedBadge = document.createElement('span');
       closedBadge.className = 'scp-badge';
       badges.prepend(closedBadge);
     }
-    closedBadge.textContent = `Chiusi ${closed}`;
+    setText(closedBadge, `Chiusi ${closed}`);
 
-    let openedBadge = [...badges.querySelectorAll('.scp-badge')].find(node => /^Aperto$/i.test((node.textContent || '').trim()) || /^Aperti\s/i.test(node.textContent || ''));
+    let openedBadge = [...badges.querySelectorAll('.scp-badge')]
+      .find((node) => /^Aperto$/i.test((node.textContent || '').trim()) || /^Aperti\s/i.test(node.textContent || ''));
     if (!openedBadge) {
       openedBadge = document.createElement('span');
-      openedBadge.className = 'scp-badge';
       closedBadge.insertAdjacentElement('afterend', openedBadge);
     }
-    openedBadge.textContent = `Aperti ${opened}`;
     openedBadge.className = opened > 0 ? 'scp-badge green' : 'scp-badge';
+    setText(openedBadge, `Aperti ${opened}`);
+
+    let shopBadge = [...badges.querySelectorAll('.scp-badge')]
+      .find((node) => /^Da comprare\s/i.test(node.textContent || ''));
+    if (shopping > 0) {
+      if (!shopBadge) {
+        shopBadge = document.createElement('span');
+        shopBadge.className = 'scp-badge orange';
+        badges.appendChild(shopBadge);
+      }
+      setText(shopBadge, `Da comprare ${shopping}`);
+    } else {
+      shopBadge?.remove();
+    }
   };
 
   const decorateCard = (card) => {
-    if (!card) return;
-    const key = card.dataset.product;
+    const key = card?.dataset?.product;
     if (!key) return;
     const product = readProduct(key);
     if (!product) return;
@@ -225,14 +224,13 @@
     card.querySelector('[data-action="opened"]')?.remove();
 
     let editor = card.querySelector('.scp-stock-editor');
-    if (editor && editor.dataset.stockUi !== '4') {
-      editor.remove();
-      editor = null;
-    }
+    if (editor && editor.dataset.stockUi !== '5') editor.remove();
+    editor = card.querySelector('.scp-stock-editor');
+
     if (!editor) {
       editor = document.createElement('div');
       editor.className = 'scp-stock-editor';
-      editor.dataset.stockUi = '4';
+      editor.dataset.stockUi = '5';
       editor.innerHTML = `
         <div class="scp-stock-heading">Le mie quantità</div>
         <div class="scp-stock-counts">
@@ -274,6 +272,9 @@
       else card.prepend(editor);
     }
 
+    if (editor.dataset.stockWired === '1') return;
+    editor.dataset.stockWired = '1';
+
     const closedInput = editor.querySelector('[data-count-input="closed"]');
     const openedInput = editor.querySelector('[data-count-input="opened"]');
     const autoToggle = editor.querySelector('.scp-auto-toggle');
@@ -282,7 +283,13 @@
     const status = editor.querySelector('.scp-auto-status');
     const savedNote = editor.querySelector('.scp-stock-saved');
 
-    const refreshStatus = (current = readProduct(key)) => {
+    const showSaved = () => {
+      savedNote.hidden = false;
+      clearTimeout(editor._savedTimer);
+      editor._savedTimer = setTimeout(() => { savedNote.hidden = true; }, 800);
+    };
+
+    const refresh = (current = readProduct(key)) => {
       if (!current) return;
       updateBadges(card, current);
       closedInput.value = String(asInt(current.stock || 0));
@@ -290,97 +297,117 @@
       autoToggle.checked = current.autoReorder === true;
       thresholdInput.value = String(asInt(current.targetReserve ?? 1, 1));
       thresholdRow.hidden = current.autoReorder !== true;
+      const threshold = asInt(current.targetReserve ?? 1, 1);
+      const closed = asInt(current.stock || 0);
       if (current.autoReorder === true) {
-        const threshold = asInt(current.targetReserve ?? 1, 1);
-        const closed = asInt(current.stock || 0);
         status.classList.add('active');
-        status.textContent = closed < threshold
-          ? `Sotto soglia: viene aggiunto automaticamente alla Spesa fino a riportare i chiusi a ${threshold}.`
-          : `Attivo: entrerà nella Spesa quando i chiusi scendono sotto ${threshold}.`;
+        setText(status, closed < threshold
+          ? `Sotto soglia: nella Spesa vengono proposti ${threshold - closed} pezzi.`
+          : `Attivo: entrerà nella Spesa quando i chiusi scendono sotto ${threshold}.`);
       } else {
         status.classList.remove('active');
-        status.textContent = 'Disattivato: anche arrivando a 0 non entrerà da solo nella Spesa.';
+        setText(status, 'Disattivato: anche arrivando a 0 non entrerà da solo nella Spesa.');
       }
     };
 
-    const showSaved = () => {
-      savedNote.hidden = false;
-      clearTimeout(editor._savedTimer);
-      editor._savedTimer = setTimeout(() => { savedNote.hidden = true; }, 800);
+    const saveClosed = () => {
+      const saved = updateProduct(key, (p) => ({
+        ...p,
+        stock: asInt(closedInput.value),
+        shoppingDismissed: p.autoReorder === true ? false : (asInt(p.shoppingQuantity || 0) > 0 ? false : true),
+      }));
+      if (saved) { refresh(saved); showSaved(); }
     };
 
-    refreshStatus(product);
-    if (editor.dataset.stockWired === '1') return;
-    editor.dataset.stockWired = '1';
-
-    const commitClosed = () => {
-      const saved = saveClosed(key, closedInput.value);
-      if (!saved) return;
-      refreshStatus(saved); showSaved();
-    };
-    const commitOpened = () => {
-      const saved = saveOpened(key, openedInput.value);
-      if (!saved) return;
-      refreshStatus(saved); showSaved();
-    };
-    const commitThreshold = () => {
-      const saved = saveThreshold(key, thresholdInput.value);
-      if (!saved) return;
-      refreshStatus(saved); showSaved();
+    const saveOpened = () => {
+      const count = asInt(openedInput.value);
+      const saved = updateProduct(key, (p) => ({ ...p, openedCount: count, opened: count > 0 }));
+      if (saved) { refresh(saved); showSaved(); }
     };
 
-    let closedTimer = null, openedTimer = null, thresholdTimer = null;
-    closedInput.addEventListener('input', () => { clearTimeout(closedTimer); closedTimer = setTimeout(commitClosed, 180); });
-    closedInput.addEventListener('change', commitClosed);
-    closedInput.addEventListener('blur', commitClosed);
-    openedInput.addEventListener('input', () => { clearTimeout(openedTimer); openedTimer = setTimeout(commitOpened, 180); });
-    openedInput.addEventListener('change', commitOpened);
-    openedInput.addEventListener('blur', commitOpened);
-    thresholdInput.addEventListener('input', () => { clearTimeout(thresholdTimer); thresholdTimer = setTimeout(commitThreshold, 180); });
-    thresholdInput.addEventListener('change', commitThreshold);
-    thresholdInput.addEventListener('blur', commitThreshold);
+    const saveThreshold = () => {
+      const saved = updateProduct(key, (p) => ({
+        ...p,
+        targetReserve: asInt(thresholdInput.value, 1),
+        shoppingDismissed: p.autoReorder === true ? false : p.shoppingDismissed,
+      }));
+      if (saved) { refresh(saved); showSaved(); }
+    };
 
-    editor.querySelectorAll('[data-count-step]').forEach(button => button.addEventListener('click', () => {
+    let closedTimer = null;
+    let openedTimer = null;
+    let thresholdTimer = null;
+    closedInput.addEventListener('input', () => { clearTimeout(closedTimer); closedTimer = setTimeout(saveClosed, 180); });
+    closedInput.addEventListener('change', saveClosed);
+    closedInput.addEventListener('blur', saveClosed);
+    openedInput.addEventListener('input', () => { clearTimeout(openedTimer); openedTimer = setTimeout(saveOpened, 180); });
+    openedInput.addEventListener('change', saveOpened);
+    openedInput.addEventListener('blur', saveOpened);
+    thresholdInput.addEventListener('input', () => { clearTimeout(thresholdTimer); thresholdTimer = setTimeout(saveThreshold, 180); });
+    thresholdInput.addEventListener('change', saveThreshold);
+    thresholdInput.addEventListener('blur', saveThreshold);
+
+    editor.querySelectorAll('[data-count-step]').forEach((button) => button.addEventListener('click', () => {
       const [kind, rawDelta] = String(button.dataset.countStep || '').split(':');
       const input = kind === 'opened' ? openedInput : closedInput;
       input.value = String(Math.max(0, asInt(input.value) + Number(rawDelta || 0)));
-      if (kind === 'opened') commitOpened(); else commitClosed();
+      if (kind === 'opened') saveOpened(); else saveClosed();
     }));
 
     autoToggle.addEventListener('change', () => {
-      const saved = saveAutoReorder(key, autoToggle.checked);
-      if (!saved) return;
-      refreshStatus(saved); showSaved();
+      const enabled = autoToggle.checked;
+      const saved = updateProduct(key, (p) => ({
+        ...p,
+        autoReorder: enabled,
+        shoppingDismissed: enabled ? false : (asInt(p.shoppingQuantity || 0) > 0 ? false : true),
+      }));
+      if (saved) { refresh(saved); showSaved(); }
     });
 
-    editor.querySelectorAll('[data-threshold-step]').forEach(button => button.addEventListener('click', () => {
+    editor.querySelectorAll('[data-threshold-step]').forEach((button) => button.addEventListener('click', () => {
       thresholdInput.value = String(Math.max(1, asInt(thresholdInput.value, 1) + Number(button.dataset.thresholdStep || 0)));
-      commitThreshold();
+      saveThreshold();
     }));
 
     editor.querySelector('.scp-remove-inventory')?.addEventListener('click', () => {
       const current = readProduct(key);
       if (!current) return;
       const name = current.name || 'questo prodotto';
-      const ok = confirm(`Rimuovere ${name} dall’inventario?\n\nSe vuoi solo indicare che non ne hai più, lascia Chiusi e Aperti a 0: il prodotto resterà visibile.`);
-      if (!ok) return;
+      if (!confirm(`Rimuovere ${name} dall’inventario?\n\nSe vuoi solo indicare che non ne hai più, lascia Chiusi e Aperti a 0: il prodotto resterà visibile.`)) return;
       if (!removeProduct(key)) return;
       if (typeof window.scortaPlusShow === 'function') window.scortaPlusShow('home');
       else card.remove();
     });
+
+    refresh(product);
   };
 
-  const decorate = () => {
-    ensureModel();
-    injectStyle();
-    document.querySelectorAll('#scortaPlusPanel [data-product]').forEach(decorateCard);
+  const decorateAll = () => {
+    scheduled = false;
+    const panel = document.getElementById('scortaPlusPanel');
+    if (!panel) return;
+
+    observer?.disconnect();
+    try {
+      migrateModelOnce();
+      injectStyle();
+      panel.querySelectorAll('[data-product]').forEach(decorateCard);
+    } finally {
+      observer?.observe(document.documentElement, { childList: true, subtree: true });
+    }
   };
 
-  const observer = new MutationObserver(() => decorate());
+  const scheduleDecorate = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(decorateAll);
+  };
+
+  observer = new MutationObserver(scheduleDecorate);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', decorate, { once: true });
-  else decorate();
-  setTimeout(decorate, 300);
-  setTimeout(decorate, 1000);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleDecorate, { once: true });
+  else scheduleDecorate();
+  setTimeout(scheduleDecorate, 300);
+  setTimeout(scheduleDecorate, 1000);
 })();
