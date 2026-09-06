@@ -1,0 +1,69 @@
+name: Temporary open package check
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/temporary-open-pack-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Install browser dependency
+        run: |
+          mkdir -p /tmp/scorta-open-check
+          cd /tmp/scorta-open-check
+          npm init -y >/dev/null 2>&1
+          npm install puppeteer-core@24.16.0 --no-audit --no-fund >/dev/null
+      - name: Verify open package transfer
+        run: |
+          cd /tmp/scorta-open-check
+          cat > test.js <<'NODE'
+          const puppeteer=require('puppeteer-core');
+          const {execSync}=require('child_process');
+          const chrome=execSync('command -v google-chrome || command -v chromium || command -v chromium-browser').toString().trim();
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const assert=(v,m)=>{if(!v) throw new Error(m)};
+          (async()=>{
+            const browser=await puppeteer.launch({headless:true,executablePath:chrome,args:['--no-sandbox','--disable-dev-shm-usage']});
+            const page=await browser.newPage();
+            const errors=[];
+            page.on('pageerror',e=>errors.push(String(e)));
+            page.on('console',m=>{if(m.type()==='error') errors.push(m.text())});
+            page.on('dialog',d=>d.accept());
+            await page.goto('https://iridea85.github.io/scorta-doterra-download/app-v14/?openpack='+Date.now(),{waitUntil:'networkidle2',timeout:60000});
+            await page.waitForSelector('[data-mainnav="catalog"]',{timeout:30000});
+            await page.click('[data-mainnav="catalog"]');
+            await page.waitForSelector('#scpCatalogSearch',{timeout:15000});
+            await page.$eval('#scpCatalogSearch',el=>{el.value='Palmarosa';el.dispatchEvent(new Event('input',{bubbles:true}))});
+            await page.waitForFunction(()=>[...document.querySelectorAll('[data-catalog-name]')].some(c=>(c.dataset.catalogName||'').toLowerCase().includes('palmarosa')),{timeout:10000});
+            await page.evaluate(()=>{const c=[...document.querySelectorAll('[data-catalog-name]')].find(x=>(x.dataset.catalogName||'').toLowerCase().includes('palmarosa'));c.querySelector('[data-action="catInventory"]').click()});
+            await sleep(300);
+            await page.click('[data-mainnav="inventory"]');
+            await page.waitForSelector('.scp-open-pack',{timeout:10000});
+            const card=await page.evaluateHandle(()=>[...document.querySelectorAll('[data-product]')].find(c=>(c.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa')));
+            await page.evaluate(c=>{
+              const closed=c.querySelector('[data-count-input="closed"]');
+              const opened=c.querySelector('[data-count-input="opened"]');
+              closed.value='3'; closed.dispatchEvent(new Event('input',{bubbles:true})); closed.dispatchEvent(new Event('change',{bubbles:true}));
+              opened.value='1'; opened.dispatchEvent(new Event('input',{bubbles:true})); opened.dispatchEvent(new Event('change',{bubbles:true}));
+            },card);
+            await sleep(500);
+            await page.evaluate(c=>c.querySelector('.scp-open-pack').click(),card);
+            await sleep(600);
+            const values=await page.evaluate(()=>{
+              const c=[...document.querySelectorAll('[data-product]')].find(x=>(x.querySelector('.scp-name')?.textContent||'').toLowerCase().includes('palmarosa'));
+              return [c.querySelector('[data-count-input="closed"]').value,c.querySelector('[data-count-input="opened"]').value];
+            });
+            assert(values[0]==='2'&&values[1]==='2','Trasferimento inatteso: '+values.join('/'));
+            console.log('PASS Apri una confezione: Chiusi 3/Aperti 1 -> Chiusi 2/Aperti 2');
+            const relevant=errors.filter(e=>!e.includes('favicon')&&!e.includes('Failed to load resource'));
+            assert(relevant.length===0,'Errori JS: '+relevant.join(' | '));
+            console.log('OPEN PACKAGE CHECK COMPLETO: OK');
+            await browser.close();
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          NODE
+          node test.js
