@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#6e5578">
+  <title>Ripara Scorta doTERRA</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#6e5578;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#3f3443;padding:20px}.card{width:min(440px,100%);background:#fff;border-radius:24px;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.18);text-align:center}.heart{font-size:54px;color:#6e5578;line-height:1}.title{font-size:22px;font-weight:850;margin:10px 0 8px}.text{font-size:14px;line-height:1.5;color:#6e6470}.status{margin-top:18px;padding:12px;border-radius:14px;background:#f6eff7;font-weight:750;font-size:13px}.ok{background:#edf6eb;color:#496e45}.err{background:#fff1f1;color:#8c4545}.btn{display:none;width:100%;margin-top:14px;border:0;border-radius:14px;background:#6e5578;color:#fff;font-size:15px;font-weight:800;padding:13px 16px}.small{margin-top:14px;font-size:11px;color:#8a808d}</style>
+</head>
+<body>
+  <main class="card">
+    <div class="heart">♥</div>
+    <div class="title">Riparazione Scorta doTERRA</div>
+    <div class="text">Aggiorno soltanto i file dell’app. <b>Inventario, quantità e lista della spesa non vengono cancellati.</b></div>
+    <div id="status" class="status">Aggiornamento in corso…</div>
+    <button id="open" class="btn" type="button">Apri Scorta doTERRA</button>
+    <div class="small">Non chiudere questa pagina finché non compare “Riparazione completata”.</div>
+  </main>
+<script>
+(async()=>{
+  const status=document.getElementById('status');
+  const open=document.getElementById('open');
+  const app='/scorta-doterra-download/app-v14/';
+  try{
+    // IMPORTANTE: non tocchiamo localStorage, dove risiedono inventario e preferenze.
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs
+        .filter(r=>/\/scorta-doterra-download\/(app-v14|app-v7)\//.test(r.scope))
+        .map(r=>r.unregister()));
+    }
+    if('caches' in window){
+      const names=await caches.keys();
+      await Promise.all(names
+        .filter(name=>name.startsWith('scorta-doterra-'))
+        .map(name=>caches.delete(name)));
+    }
+    await fetch(app+'?repair='+Date.now(),{cache:'reload'}).catch(()=>null);
+    status.textContent='Riparazione completata ✓';
+    status.className='status ok';
+    open.style.display='block';
+    open.onclick=()=>location.replace(app+'?fresh='+Date.now());
+    setTimeout(()=>location.replace(app+'?fresh='+Date.now()),900);
+  }catch(error){
+    status.textContent='Non sono riuscita a completare automaticamente. Tocca il pulsante qui sotto.';
+    status.className='status err';
+    open.style.display='block';
+    open.onclick=()=>location.replace(app+'?fresh='+Date.now());
+  }
+})();
+</script>
+</body>
+</html>
