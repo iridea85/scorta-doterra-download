@@ -1,0 +1,21 @@
+name: Temporary read Scorta stats
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/temporary-read-scorta-stats.yml'
+permissions:
+  contents: read
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read counters without incrementing
+        run: |
+          set -e
+          API='https://countapi.mileshilliard.com/api/v1/get/scorta_doterra_iridea85_v1_'
+          for key in views_total unique_total views_day_20260906 unique_day_20260906 app_opens android_clicks ios_clicks last_visit; do
+            printf '%s=' "$key"
+            curl -fsS "${API}${key}" || true
+            echo
+          done
