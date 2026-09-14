@@ -1,0 +1,21 @@
+name: Actions runner diagnostic
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Public Ubuntu runner diagnostic
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm runner
+        run: |
+          echo "runner=${{ runner.name }}"
+          echo "os=${{ runner.os }}"
+          echo "arch=${{ runner.arch }}"
+          uname -a
