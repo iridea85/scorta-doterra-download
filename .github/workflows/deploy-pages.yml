@@ -43,6 +43,7 @@ jobs:
           # Mantiene byte-stabile la precedente app-v14 rispetto alla produzione
           # del commit 90351deda9faf3b7f32b527af5418bdc3a9df31a.
           export ASSET_VERSION="90351deda9fa"
+          export PWA_FIX_VERSION="${GITHUB_SHA:0:12}"
           rm -rf site
           mkdir -p site/app-v14 site/catalog
           cp index.html site/index.html
@@ -238,6 +239,94 @@ jobs:
               if key not in main:
                   raise SystemExit(f'chiave inventario mancante: {key}')
           PY
+
+          # Compatibilita per le PWA installate tramite il precedente percorso
+          # /app-v14/: pubblica la stessa build v5, conservando identita, start_url
+          # e scope gia installati. Nessun dato applicativo viene letto o scritto.
+          rm -rf site/app-v14
+          cp -R site/app site/app-v14
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, os, re
+
+          app = Path('site/app-v14')
+          old_path = '/scorta-doterra-download/app-v14/'
+
+          index = app / 'index.html'
+          html = index.read_text(encoding='utf-8')
+          old_base = '<base href="/scorta-doterra-download/app/">'
+          if html.count(old_base) != 1:
+              raise SystemExit('base href v5 inatteso nel mirror app-v14')
+          index.write_text(html.replace(old_base, f'<base href="{old_path}">', 1), encoding='utf-8')
+
+          manifest_file = app / 'manifest.json'
+          manifest = json.loads(manifest_file.read_text(encoding='utf-8'))
+          for field in ('id', 'start_url', 'scope'):
+              manifest[field] = old_path
+          manifest_file.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
+
+          bootstrap = app / 'flutter_bootstrap.js'
+          source = bootstrap.read_text(encoding='utf-8')
+          version = f'scorta-v5-compat-{os.environ["PWA_FIX_VERSION"]}'
+          source, count = re.subn(
+              r'serviceWorkerVersion:\s*"[^"]+"',
+              f'serviceWorkerVersion: "{version}"',
+              source,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit('serviceWorkerVersion v5 non trovato nel mirror app-v14')
+          bootstrap.write_text(source, encoding='utf-8')
+          PY
+
+          cat > site/app-v14/flutter_service_worker.js <<EOF
+          'use strict';
+          const CACHE_NAME='scorta-doterra-app-v14-${PWA_FIX_VERSION}';
+          const APP_SCOPE='/scorta-doterra-download/app-v14/';
+          const CORE=['./','./index.html','./flutter_bootstrap.js','./main.dart.js','./manifest.json','./assets/AssetManifest.bin.json','./assets/FontManifest.json'];
+          const SCORTA_CACHE_PREFIXES=['scorta-doterra-pwa-','scorta-doterra-app-v14-'];
+
+          self.addEventListener('install',event=>event.waitUntil(
+            caches.open(CACHE_NAME)
+              .then(cache=>cache.addAll(CORE.map(url=>new Request(url,{cache:'reload'}))))
+              .then(()=>self.skipWaiting())
+          ));
+
+          self.addEventListener('activate',event=>event.waitUntil(
+            caches.keys()
+              .then(names=>Promise.all(names
+                .filter(name=>SCORTA_CACHE_PREFIXES.some(prefix=>name.startsWith(prefix))&&name!==CACHE_NAME)
+                .map(name=>caches.delete(name))))
+              .then(()=>self.clients.claim())
+          ));
+
+          self.addEventListener('message',event=>{
+            if(event.data==='skipWaiting') self.skipWaiting();
+          });
+
+          self.addEventListener('fetch',event=>{
+            if(event.request.method!=='GET') return;
+            const url=new URL(event.request.url);
+            if(url.origin!==self.location.origin||!url.pathname.startsWith(APP_SCOPE)) return;
+            event.respondWith(
+              fetch(event.request,{cache:'no-store'}).then(response=>{
+                if(response&&response.ok){
+                  const copy=response.clone();
+                  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)));
+                }
+                return response;
+              }).catch(async()=>{
+                const cache=await caches.open(CACHE_NAME);
+                const cached=await cache.match(event.request,{ignoreSearch:true});
+                if(cached) return cached;
+                if(event.request.mode==='navigate') return cache.match('./index.html');
+                throw new Error('Risorsa non disponibile offline');
+              })
+            );
+          });
+          EOF
+
+          python3 tests/test_pwa_update.py site deploy-artifacts/scorta-doterra-preview-v5-approved.zip
 
       - name: Mantieni pagine e download esistenti
         run: |
