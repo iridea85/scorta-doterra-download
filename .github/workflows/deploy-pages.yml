@@ -12,6 +12,7 @@ on:
       - "hub-personale/**"
       - "app-enhancements/**"
       - "catalog/**"
+      - "deploy-artifacts/scorta-doterra-preview-v5-approved.zip"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -39,7 +40,9 @@ jobs:
       - name: Prepara Scorta doTERRA v14
         run: |
           set -euo pipefail
-          export ASSET_VERSION="${GITHUB_SHA:0:12}"
+          # Mantiene byte-stabile la precedente app-v14 rispetto alla produzione
+          # del commit 90351deda9faf3b7f32b527af5418bdc3a9df31a.
+          export ASSET_VERSION="90351deda9fa"
           rm -rf site
           mkdir -p site/app-v14 site/catalog
           cp index.html site/index.html
@@ -110,8 +113,8 @@ jobs:
           Path('site/app-v14/icons/Icon-192.png').write_bytes(Path('site/app-v14/icons/Icon-192-heart-v14.png').read_bytes())
           Path('site/app-v14/icons/Icon-512.png').write_bytes(Path('site/app-v14/icons/Icon-512-heart-v14.png').read_bytes())
 
-          # 2) Configura index + manifest. Gli asset usano SEMPRE il commit corrente
-          # come versione, così browser e PWA non possono riutilizzare script vecchi.
+          # 2) Configura index + manifest con la versione asset del deploy storico,
+          # così le aree preesistenti restano identiche alla produzione precedente.
           p=Path('site/app-v14/index.html')
           s=p.read_text(encoding='utf-8')
           s=s.replace('<base href="/scorta-doterra-download/app/">','<base href="/scorta-doterra-download/app-v14/">')
@@ -208,6 +211,33 @@ jobs:
           grep -q 'new A.c3(9829,null,!1)' site/app-v14/main.dart.js
           grep -q 'Icon-192-heart-v14.png' site/app-v14/manifest.json
           test -s site/app-v14/icons/Icon-512-heart-v14.png
+
+          # Pubblica senza ricompilarla la build approvata nella preview privata v5.
+          mkdir -p site/app
+          unzip -q deploy-artifacts/scorta-doterra-preview-v5-approved.zip -d site/app
+          test -s site/app/index.html
+          test -s site/app/main.dart.js
+          test -s site/app/flutter_service_worker.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          app = Path('site/app')
+          manifest = json.loads((app / 'manifest.json').read_text(encoding='utf-8'))
+          expected = '/scorta-doterra-download/app/'
+          for field in ('id', 'start_url', 'scope'):
+              if manifest.get(field) != expected:
+                  raise SystemExit(f'{field} inatteso: {manifest.get(field)!r}')
+
+          index = (app / 'index.html').read_text(encoding='utf-8')
+          if f'<base href="{expected}">' not in index:
+              raise SystemExit('base href ufficiale non trovato')
+
+          main = (app / 'main.dart.js').read_text(encoding='utf-8')
+          for key in ('doterra_inventory_v2', 'oils_inventory_v1'):
+              if key not in main:
+                  raise SystemExit(f'chiave inventario mancante: {key}')
+          PY
 
       - name: Mantieni pagine e download esistenti
         run: |
