@@ -57,6 +57,12 @@ def main() -> None:
     # C: one stable worker version per deploy and no reload hook/loop.
     versions = re.findall(r'serviceWorkerVersion:\s*"([^"]+)"', bootstrap)
     assert len(versions) == 1 and versions[0].startswith("scorta-v5-compat-")
+    version = versions[0]
+    compat_index = (compat / "index.html").read_text(encoding="utf-8")
+    assert f'flutter_bootstrap.js?v={version}' in compat_index
+    assert f'manifest.json?v={version}' in compat_index
+    assert f'"mainJsPath":"main.dart.js?v={version}"' in bootstrap
+    assert "url.searchParams.set('__scorta_v5',CACHE_VERSION)" in worker
     assert "location.reload" not in bootstrap
     assert "location.reload" not in worker
     assert "skipWaiting" in worker and "clients.claim" in worker

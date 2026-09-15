@@ -251,13 +251,29 @@ jobs:
 
           app = Path('site/app-v14')
           old_path = '/scorta-doterra-download/app-v14/'
+          version = f'scorta-v5-compat-{os.environ["PWA_FIX_VERSION"]}'
 
           index = app / 'index.html'
           html = index.read_text(encoding='utf-8')
           old_base = '<base href="/scorta-doterra-download/app/">'
           if html.count(old_base) != 1:
               raise SystemExit('base href v5 inatteso nel mirror app-v14')
-          index.write_text(html.replace(old_base, f'<base href="{old_path}">', 1), encoding='utf-8')
+          html = html.replace(old_base, f'<base href="{old_path}">', 1)
+          html, manifest_count = re.subn(
+              r'href="manifest\.json(?:\?[^\"]*)?"',
+              f'href="manifest.json?v={version}"',
+              html,
+              count=1,
+          )
+          html, bootstrap_count = re.subn(
+              r'src="flutter_bootstrap\.js(?:\?[^\"]*)?"',
+              f'src="flutter_bootstrap.js?v={version}"',
+              html,
+              count=1,
+          )
+          if manifest_count != 1 or bootstrap_count != 1:
+              raise SystemExit('asset critici v5 non trovati nel mirror app-v14')
+          index.write_text(html, encoding='utf-8')
 
           manifest_file = app / 'manifest.json'
           manifest = json.loads(manifest_file.read_text(encoding='utf-8'))
@@ -267,7 +283,6 @@ jobs:
 
           bootstrap = app / 'flutter_bootstrap.js'
           source = bootstrap.read_text(encoding='utf-8')
-          version = f'scorta-v5-compat-{os.environ["PWA_FIX_VERSION"]}'
           source, count = re.subn(
               r'serviceWorkerVersion:\s*"[^"]+"',
               f'serviceWorkerVersion: "{version}"',
@@ -276,19 +291,37 @@ jobs:
           )
           if count != 1:
               raise SystemExit('serviceWorkerVersion v5 non trovato nel mirror app-v14')
+          source, main_count = re.subn(
+              r'"mainJsPath":"main\.dart\.js(?:\?[^\"]*)?"',
+              f'"mainJsPath":"main.dart.js?v={version}"',
+              source,
+              count=1,
+          )
+          if main_count != 1:
+              raise SystemExit('mainJsPath v5 non trovato nel mirror app-v14')
           bootstrap.write_text(source, encoding='utf-8')
           PY
 
           cat > site/app-v14/flutter_service_worker.js <<EOF
           'use strict';
           const CACHE_NAME='scorta-doterra-app-v14-${PWA_FIX_VERSION}';
+          const CACHE_VERSION='${PWA_FIX_VERSION}';
           const APP_SCOPE='/scorta-doterra-download/app-v14/';
           const CORE=['./','./index.html','./flutter_bootstrap.js','./main.dart.js','./manifest.json','./assets/AssetManifest.bin.json','./assets/FontManifest.json'];
           const SCORTA_CACHE_PREFIXES=['scorta-doterra-pwa-','scorta-doterra-app-v14-'];
 
+          const versionedUrl=input=>{
+            const url=new URL(input,self.location);
+            url.searchParams.set('__scorta_v5',CACHE_VERSION);
+            return url.toString();
+          };
+
           self.addEventListener('install',event=>event.waitUntil(
-            caches.open(CACHE_NAME)
-              .then(cache=>cache.addAll(CORE.map(url=>new Request(url,{cache:'reload'}))))
+            caches.open(CACHE_NAME).then(cache=>Promise.all(CORE.map(async path=>{
+              const response=await fetch(versionedUrl(path),{cache:'reload',credentials:'same-origin'});
+              if(!response.ok) throw new Error('Precache non riuscita: '+path);
+              await cache.put(new Request(new URL(path,self.location).toString()),response);
+            })))
               .then(()=>self.skipWaiting())
           ));
 
@@ -309,7 +342,7 @@ jobs:
             const url=new URL(event.request.url);
             if(url.origin!==self.location.origin||!url.pathname.startsWith(APP_SCOPE)) return;
             event.respondWith(
-              fetch(event.request,{cache:'no-store'}).then(response=>{
+              fetch(versionedUrl(event.request.url),{cache:'no-store',credentials:'same-origin'}).then(response=>{
                 if(response&&response.ok){
                   const copy=response.clone();
                   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)));
