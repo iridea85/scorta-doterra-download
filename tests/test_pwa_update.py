@@ -35,7 +35,7 @@ def main() -> None:
             assert digest(app / relative) == digest(approved / relative), relative
 
     # A: the previously installed /app-v14/ identity remains unchanged while
-    # the executable Flutter application is exactly the approved v5 build.
+    # the executable Flutter application is exactly the approved v7 build.
     compat_manifest = json.loads((compat / "manifest.json").read_text(encoding="utf-8"))
     assert all(
         compat_manifest[field] == "/scorta-doterra-download/app-v14/"
@@ -44,7 +44,7 @@ def main() -> None:
     assert digest(compat / "main.dart.js") == digest(app / "main.dart.js")
     assert "La mia scorta" in (compat / "main.dart.js").read_text(encoding="utf-8")
 
-    # B: a new installation at /app/ still receives the unmodified approved v5.
+    # B: a new installation at /app/ receives the unmodified approved v7.
     app_manifest = json.loads((app / "manifest.json").read_text(encoding="utf-8"))
     assert all(
         app_manifest[field] == "/scorta-doterra-download/app/"
@@ -56,13 +56,13 @@ def main() -> None:
 
     # C: one stable worker version per deploy and no reload hook/loop.
     versions = re.findall(r'serviceWorkerVersion:\s*"([^"]+)"', bootstrap)
-    assert len(versions) == 1 and versions[0].startswith("scorta-v5-compat-")
+    assert len(versions) == 1 and versions[0].startswith("scorta-v7-compat-")
     version = versions[0]
     compat_index = (compat / "index.html").read_text(encoding="utf-8")
     assert f'flutter_bootstrap.js?v={version}' in compat_index
     assert f'manifest.json?v={version}' in compat_index
     assert f'"mainJsPath":"main.dart.js?v={version}"' in bootstrap
-    assert "url.searchParams.set('__scorta_v5',CACHE_VERSION)" in worker
+    assert "url.searchParams.set('__scorta_v7',CACHE_VERSION)" in worker
     assert "location.reload" not in bootstrap
     assert "location.reload" not in worker
     assert "skipWaiting" in worker and "clients.claim" in worker
@@ -95,12 +95,14 @@ def main() -> None:
     before = {
         "doterra_inventory_v2": '{"lavanda":{"closed":2,"opened":1,"notes":"uso sera"}}',
         "oils_inventory_v1": '{"shopping":{"incenso":2}}',
+        "doterra_custom_products_v1": '[{"id":"custom:test","name":"Edizione privata"}]',
     }
     after = dict(before)
     assert after == before
     main_js = (app / "main.dart.js").read_text(encoding="utf-8")
     assert "doterra_inventory_v2" in main_js
     assert "oils_inventory_v1" in main_js
+    assert "doterra_custom_products_v1" in main_js
 
     print("PWA update regression: 5 scenarios passed")
 

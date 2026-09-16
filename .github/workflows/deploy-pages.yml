@@ -12,7 +12,7 @@ on:
       - "hub-personale/**"
       - "app-enhancements/**"
       - "catalog/**"
-      - "deploy-artifacts/scorta-doterra-preview-v5-approved.zip"
+      - "deploy-artifacts/scorta-doterra-preview-v7-approved.zip.part-*"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -213,9 +213,11 @@ jobs:
           grep -q 'Icon-192-heart-v14.png' site/app-v14/manifest.json
           test -s site/app-v14/icons/Icon-512-heart-v14.png
 
-          # Pubblica senza ricompilarla la build approvata nella preview privata v5.
+          # Pubblica senza ricompilarla la build approvata nella preview privata v7.
+          approved_zip=/tmp/scorta-doterra-preview-v7-approved.zip
+          cat deploy-artifacts/scorta-doterra-preview-v7-approved.zip.part-* > "$approved_zip"
           mkdir -p site/app
-          unzip -q deploy-artifacts/scorta-doterra-preview-v5-approved.zip -d site/app
+          unzip -q "$approved_zip" -d site/app
           test -s site/app/index.html
           test -s site/app/main.dart.js
           test -s site/app/flutter_service_worker.js
@@ -235,13 +237,13 @@ jobs:
               raise SystemExit('base href ufficiale non trovato')
 
           main = (app / 'main.dart.js').read_text(encoding='utf-8')
-          for key in ('doterra_inventory_v2', 'oils_inventory_v1'):
+          for key in ('doterra_inventory_v2', 'oils_inventory_v1', 'doterra_custom_products_v1'):
               if key not in main:
                   raise SystemExit(f'chiave inventario mancante: {key}')
           PY
 
           # Compatibilita per le PWA installate tramite il precedente percorso
-          # /app-v14/: pubblica la stessa build v5, conservando identita, start_url
+          # /app-v14/: pubblica la stessa build v7, conservando identita, start_url
           # e scope gia installati. Nessun dato applicativo viene letto o scritto.
           rm -rf site/app-v14
           cp -R site/app site/app-v14
@@ -251,13 +253,13 @@ jobs:
 
           app = Path('site/app-v14')
           old_path = '/scorta-doterra-download/app-v14/'
-          version = f'scorta-v5-compat-{os.environ["PWA_FIX_VERSION"]}'
+          version = f'scorta-v7-compat-{os.environ["PWA_FIX_VERSION"]}'
 
           index = app / 'index.html'
           html = index.read_text(encoding='utf-8')
           old_base = '<base href="/scorta-doterra-download/app/">'
           if html.count(old_base) != 1:
-              raise SystemExit('base href v5 inatteso nel mirror app-v14')
+              raise SystemExit('base href v7 inatteso nel mirror app-v14')
           html = html.replace(old_base, f'<base href="{old_path}">', 1)
           html, manifest_count = re.subn(
               r'href="manifest\.json(?:\?[^\"]*)?"',
@@ -272,7 +274,7 @@ jobs:
               count=1,
           )
           if manifest_count != 1 or bootstrap_count != 1:
-              raise SystemExit('asset critici v5 non trovati nel mirror app-v14')
+              raise SystemExit('asset critici v7 non trovati nel mirror app-v14')
           index.write_text(html, encoding='utf-8')
 
           manifest_file = app / 'manifest.json'
@@ -290,7 +292,7 @@ jobs:
               count=1,
           )
           if count != 1:
-              raise SystemExit('serviceWorkerVersion v5 non trovato nel mirror app-v14')
+              raise SystemExit('serviceWorkerVersion v7 non trovato nel mirror app-v14')
           source, main_count = re.subn(
               r'"mainJsPath":"main\.dart\.js(?:\?[^\"]*)?"',
               f'"mainJsPath":"main.dart.js?v={version}"',
@@ -298,7 +300,7 @@ jobs:
               count=1,
           )
           if main_count != 1:
-              raise SystemExit('mainJsPath v5 non trovato nel mirror app-v14')
+              raise SystemExit('mainJsPath v7 non trovato nel mirror app-v14')
           bootstrap.write_text(source, encoding='utf-8')
           PY
 
@@ -312,7 +314,7 @@ jobs:
 
           const versionedUrl=input=>{
             const url=new URL(input,self.location);
-            url.searchParams.set('__scorta_v5',CACHE_VERSION);
+            url.searchParams.set('__scorta_v7',CACHE_VERSION);
             return url.toString();
           };
 
@@ -359,7 +361,7 @@ jobs:
           });
           EOF
 
-          python3 tests/test_pwa_update.py site deploy-artifacts/scorta-doterra-preview-v5-approved.zip
+          python3 tests/test_pwa_update.py site "$approved_zip"
 
       - name: Mantieni pagine e download esistenti
         run: |
