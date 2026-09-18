@@ -12,7 +12,7 @@ on:
       - "hub-personale/**"
       - "app-enhancements/**"
       - "catalog/**"
-      - "deploy-artifacts/scorta-doterra-preview-v7-approved.zip.part-*"
+      - "deploy-artifacts/scorta-doterra-preview-v9-approved.zip.part-*"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -213,9 +213,9 @@ jobs:
           grep -q 'Icon-192-heart-v14.png' site/app-v14/manifest.json
           test -s site/app-v14/icons/Icon-512-heart-v14.png
 
-          # Pubblica senza ricompilarla la build approvata nella preview privata v7.
-          approved_zip=/tmp/scorta-doterra-preview-v7-approved.zip
-          cat deploy-artifacts/scorta-doterra-preview-v7-approved.zip.part-* > "$approved_zip"
+          # Pubblica senza ricompilarla la build approvata nella preview privata v9.
+          approved_zip=/tmp/scorta-doterra-preview-v9-approved.zip
+          cat deploy-artifacts/scorta-doterra-preview-v9-approved.zip.part-* > "$approved_zip"
           mkdir -p site/app
           unzip -q "$approved_zip" -d site/app
           test -s site/app/index.html
