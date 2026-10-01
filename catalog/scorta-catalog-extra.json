@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026.10.01.shop.1",
+  "catalogVersion": "2026.10.01.shop.2",
   "updatedAt": "2026-10-01",
   "source": "Shop ufficiale doTERRA Italia e pagine ufficiali doTERRA di altri mercati",
   "note": "Integrazioni al catalogo base: prodotti recenti, speciali, storici/internazionali, nuovi formati e alias italiani/inglesi verificati su fonti ufficiali doTERRA.",
@@ -364,6 +364,85 @@
       "aliases": [
         "InTune Pocket Diffuser",
         "Diffusore tascabile InTune"
+      ]
+    },
+    {
+      "name": "IKISE™ Cleansing Balm",
+      "category": "Cura della pelle",
+      "unit": "70 g",
+      "aliases": [
+        "IKISE Cleansing Balm",
+        "Balsamo detergente IKISE",
+        "IKISE Balm Detergente"
+      ]
+    },
+    {
+      "name": "IKISE™ Face Cleanser",
+      "category": "Cura della pelle",
+      "unit": "100 g",
+      "aliases": [
+        "IKISE Face Cleanser",
+        "Detergente viso IKISE",
+        "IKISE Detergente viso"
+      ]
+    },
+    {
+      "name": "IKISE™ Toner Smooth & Rich",
+      "category": "Cura della pelle",
+      "unit": "150 ml",
+      "aliases": [
+        "IKISE Toner",
+        "Toner IKISE",
+        "Tonico IKISE"
+      ]
+    },
+    {
+      "name": "IKISE™ Dual Serum Smooth & Rich",
+      "category": "Cura della pelle",
+      "unit": "28 ml",
+      "aliases": [
+        "IKISE Dual Serum",
+        "Siero doppio IKISE",
+        "Siero IKISE"
+      ]
+    },
+    {
+      "name": "IKISE™ Day & Night Face Cream",
+      "category": "Cura della pelle",
+      "unit": "45 g",
+      "aliases": [
+        "IKISE Day & Night Cream",
+        "Crema viso giorno e notte IKISE",
+        "Crema giorno e notte IKISE"
+      ]
+    },
+    {
+      "name": "IKISE™ Intensive Eye Cream",
+      "category": "Cura della pelle",
+      "unit": "20 g",
+      "aliases": [
+        "IKISE Eye Cream",
+        "Crema contorno occhi IKISE"
+      ]
+    },
+    {
+      "name": "IKISE™ Skin Ritual",
+      "category": "Kit e collezioni",
+      "unit": "1 kit",
+      "aliases": [
+        "IKISE Skin Ritual Kit",
+        "Rituale viso IKISE",
+        "IKISE Ritual"
+      ]
+    },
+    {
+      "name": "IKISE™ Skin Ritual Pro Set",
+      "category": "Kit e collezioni",
+      "unit": "1 kit",
+      "aliases": [
+        "IKISE Pro Set",
+        "Set completo IKISE",
+        "IKISE Skin Ritual Pro"
       ]
     }
   ]
