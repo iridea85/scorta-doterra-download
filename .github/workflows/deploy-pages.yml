@@ -14,7 +14,7 @@ on:
       - "catalog/**"
       - "deploy-artifacts/scorta-doterra-preview-v9-approved.zip.part-*"
       - "deploy-artifacts/scorta-doterra-preview-v13-*"
-      - "deploy-artifacts/scorta-doterra-preview-v18-*"
+      - "deploy-artifacts/scorta-doterra-preview-v31-*"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -215,10 +215,10 @@ jobs:
           grep -q 'Icon-192-heart-v14.png' site/app-v14/manifest.json
           test -s site/app-v14/icons/Icon-512-heart-v14.png
 
-          # Pubblica i byte della preview privata v18 approvata.
-          sha256sum -c deploy-artifacts/scorta-doterra-preview-v18-approved.sha256
+          # Pubblica i byte della preview privata v30 approvata con Spesa dal Catalogo (v31).
+          sha256sum -c deploy-artifacts/scorta-doterra-preview-v31-approved.sha256
           mkdir -p site/app
-          unzip -q deploy-artifacts/scorta-doterra-preview-v18-approved.zip -d site/app
+          unzip -q deploy-artifacts/scorta-doterra-preview-v31-approved.zip -d site/app
           test -s site/app/index.html
           test -s site/app/main.dart.js
           test -s site/app/flutter_service_worker.js
@@ -362,7 +362,7 @@ jobs:
           });
           EOF
 
-          approved_zip=/tmp/scorta-doterra-preview-v18-approved.zip
+          approved_zip=/tmp/scorta-doterra-preview-v31-approved.zip
           (cd site/app && zip -qr "$approved_zip" .)
           python3 tests/test_pwa_update.py site "$approved_zip"
 
