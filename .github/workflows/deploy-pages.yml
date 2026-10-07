@@ -15,6 +15,7 @@ on:
       - "deploy-artifacts/scorta-doterra-preview-v9-approved.zip.part-*"
       - "deploy-artifacts/scorta-doterra-preview-v13-*"
       - "deploy-artifacts/scorta-doterra-preview-v31-*"
+      - "deploy-artifacts/scorta-doterra-preview-v33-*"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
