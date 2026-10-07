@@ -219,6 +219,9 @@ jobs:
           sha256sum -c deploy-artifacts/scorta-doterra-preview-v31-approved.sha256
           mkdir -p site/app
           unzip -q deploy-artifacts/scorta-doterra-preview-v31-approved.zip -d site/app
+          # Preview corrente v33: stessi byte, con il solo branding visibile richiesto.
+          sha256sum -c deploy-artifacts/scorta-doterra-preview-v33-approved-overlay.sha256
+          unzip -oq deploy-artifacts/scorta-doterra-preview-v33-approved-overlay.zip -d site/app
           test -s site/app/index.html
           test -s site/app/main.dart.js
           test -s site/app/flutter_service_worker.js
