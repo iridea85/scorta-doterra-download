@@ -16,6 +16,8 @@ on:
       - "deploy-artifacts/scorta-doterra-preview-v13-*"
       - "deploy-artifacts/scorta-doterra-preview-v31-*"
       - "deploy-artifacts/scorta-doterra-preview-v33-*"
+      - "deploy-artifacts/v47-migration/**"
+      - "deploy-artifacts/v47-migration.sha256"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -223,6 +225,8 @@ jobs:
           # Preview corrente v33: stessi byte, con il solo branding visibile richiesto.
           sha256sum -c deploy-artifacts/scorta-doterra-preview-v33-approved-overlay.sha256
           unzip -oq deploy-artifacts/scorta-doterra-preview-v33-approved-overlay.zip -d site/app
+          sha256sum -c deploy-artifacts/v47-migration.sha256
+          cp -R deploy-artifacts/v47-migration/. site/app/
           test -s site/app/index.html
           test -s site/app/main.dart.js
           test -s site/app/flutter_service_worker.js

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <base href="/scorta-doterra-download/app/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="dōtapp — La tua scorta di oli, organizzata.">
+  <meta name="theme-color" content="#6E5578">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="dōtapp">
+  <meta name="application-name" content="dōtapp">
+
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="icons/Icon-192.png">
+  <link rel="manifest" href="manifest.json?v=dotapp-migration-v47-92a85c633777">
+
+  <title>dōtapp</title>
+</head>
+<body>
+  <div id="dotapp-launch" role="status" style="position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:#F7F5F7;color:#60476b;font-family:system-ui,sans-serif">
+    <strong style="font-size:32px">dōtapp</strong>
+    <p style="margin:10px 16px;font-size:15px">La tua scorta di oli, organizzata.</p>
+  </div>
+  <script>window.addEventListener('flutter-first-frame', () => document.getElementById('dotapp-launch')?.remove(), {once:true});</script>
+  <script>
+    (() => {
+      const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+      if (standalone) return;
+
+      const ua = navigator.userAgent || '';
+      const isIOS =
+        /iPhone|iPad|iPod/i.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      let deferredPrompt = null;
+      let installButton = null;
+
+      const ensureButton = () => {
+        if (installButton) return installButton;
+
+        installButton = document.createElement('button');
+        installButton.type = 'button';
+        installButton.setAttribute('aria-label', 'Installa dōtapp');
+        installButton.innerHTML =
+          '<span style="font-size:18px;line-height:1">⇩</span><span>Installa</span>';
+
+        Object.assign(installButton.style, {
+          position: 'fixed',
+          top: 'calc(10px + env(safe-area-inset-top))',
+          right: '12px',
+          zIndex: '99999',
+          border: '1px solid rgba(110,85,120,.18)',
+          borderRadius: '14px',
+          padding: '9px 12px',
+          background: '#FFFFFF',
+          color: '#6E5578',
+          fontSize: '14px',
+          fontWeight: '800',
+          lineHeight: '1',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          boxShadow: '0 6px 18px rgba(50,34,56,.12)',
+          WebkitTapHighlightColor: 'transparent'
+        });
+
+        document.body.appendChild(installButton);
+        return installButton;
+      };
+
+      const removeButton = () => {
+        if (installButton) installButton.remove();
+        installButton = null;
+      };
+
+      if (isIOS) {
+        const button = ensureButton();
+        button.addEventListener('click', () => {
+          alert(
+            'Per installare dōtapp su iPhone:\n\n' +
+            '1. Apri questa pagina in Safari\n' +
+            '2. Tocca Condividi\n' +
+            '3. Tocca “Aggiungi alla schermata Home”\n' +
+            '4. Tocca Aggiungi'
+          );
+        });
+      }
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+
+        const button = ensureButton();
+        button.onclick = async () => {
+          if (!deferredPrompt) return;
+          button.disabled = true;
+          await deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          removeButton();
+        };
+      });
+
+      window.addEventListener('appinstalled', removeButton);
+    })();
+  </script>
+  <!-- OCR locale nel browser. Il motore viene caricato solo quando l’utente avvia una scansione. -->
+  <script>
+    let _tesseractLoader = null;
+
+    async function _ensureTesseract() {
+      if (window.Tesseract) return;
+      if (!_tesseractLoader) {
+        _tesseractLoader = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/tesseract.js@v4.0.2/dist/tesseract.min.js';
+          script.onload = resolve;
+          script.onerror = () => {
+            _tesseractLoader = null;
+            script.remove();
+            reject(new Error('Impossibile caricare il motore OCR'));
+          };
+          document.head.appendChild(script);
+        });
+      }
+      await _tesseractLoader;
+    }
+
+    function _ocrUsefulWords(text) {
+      const ignored = new Set(['doterra', 'essential', 'oil', 'oils', 'cptg', 'pure', 'tested', 'ml']);
+      return (text || '').normalize('NFKD').toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean)
+        .filter(word => /[a-z]/.test(word) && word.length >= 3 && !ignored.has(word));
+    }
+
+    function _ocrQuality(text, confidence) {
+      const useful = _ocrUsefulWords(text);
+      const letters = useful.join('').length;
+      const unique = new Set(useful).size;
+      return letters + useful.length * 5 + unique * 2 + Math.max(0, confidence || 0) / 20;
+    }
+
+    function _needsPreprocessing(pass) {
+      const useful = _ocrUsefulWords(pass.text);
+      return useful.length === 0 || useful.join('').length < 7 || pass.quality < 14;
+    }
+
+    async function _preprocessImage(imagePath, binary) {
+      const response = await fetch(imagePath);
+      if (!response.ok) throw new Error('Immagine non leggibile dal preprocessing');
+      const bitmap = await createImageBitmap(await response.blob());
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d', {willReadFrequently: true});
+      if (!context) throw new Error('Canvas non disponibile');
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close?.();
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      let sum = 0;
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        const gray = 0.299 * pixels.data[i] + 0.587 * pixels.data[i + 1] + 0.114 * pixels.data[i + 2];
+        sum += gray;
+      }
+      const average = sum / Math.max(1, pixels.data.length / 4);
+      const threshold = Math.max(90, Math.min(190, average * 0.95));
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        const gray = 0.299 * pixels.data[i] + 0.587 * pixels.data[i + 1] + 0.114 * pixels.data[i + 2];
+        const enhanced = binary
+          ? (gray >= threshold ? 255 : 0)
+          : Math.max(0, Math.min(255, (gray - 128) * 1.75 + 128));
+        pixels.data[i] = enhanced;
+        pixels.data[i + 1] = enhanced;
+        pixels.data[i + 2] = enhanced;
+      }
+      context.putImageData(pixels, 0, 0);
+      const blob = await new Promise((resolve, reject) => canvas.toBlob(
+        value => value ? resolve(value) : reject(new Error('Conversione immagine fallita')),
+        'image/jpeg', 0.94,
+      ));
+      const url = URL.createObjectURL(blob);
+      return {url, release: () => URL.revokeObjectURL(url)};
+    }
+
+    async function _extractText(imagePath, mapData) {
+      await _ensureTesseract();
+      const errors = [];
+      const worker = await Tesseract.createWorker({
+        errorHandler: error => errors.push('Tesseract: ' + (error?.message || String(error))),
+      });
+      let timer;
+      try {
+        const operation = async () => {
+          await worker.load();
+          const language = mapData.language || 'ita+eng';
+          await worker.loadLanguage(language);
+          await worker.initialize(language);
+          const {scan_diagnostics, ...parameters} = mapData.args || {};
+          const passes = [];
+
+          const runPass = async (input, psm, preprocessing) => {
+            const mode = `PSM ${psm} — ${preprocessing}`;
+            try {
+              await worker.setParameters({...parameters, tessedit_pageseg_mode: psm});
+              const result = await worker.recognize(input, {}, worker.id);
+              const text = parameters.tessjs_create_hocr
+                ? (result.data.hocr || '') : (result.data.text || '');
+              const confidence = result.data.confidence ?? null;
+              passes.push({mode, psm, preprocessing, text, confidence,
+                quality: _ocrQuality(text, confidence), error: ''});
+            } catch (error) {
+              const message = error?.message || String(error);
+              errors.push(`${mode}: ${message}`);
+              passes.push({mode, psm, preprocessing, text: '', confidence: null,
+                quality: 0, error: message});
+            }
+          };
+
+          await runPass(imagePath, '6', 'originale');
+          await runPass(imagePath, '11', 'originale, testo sparso');
+          let bestPassIndex = passes.reduce((best, pass, index) =>
+            pass.quality > passes[best].quality ? index : best, 0);
+          let preprocessingExecuted = false;
+
+          if (_needsPreprocessing(passes[bestPassIndex])) {
+            preprocessingExecuted = true;
+            for (const binary of [false, true]) {
+              let prepared;
+              const label = binary
+                ? '2x, scala di grigi, contrasto e binarizzazione'
+                : '2x, scala di grigi e contrasto';
+              try {
+                prepared = await _preprocessImage(imagePath, binary);
+                await runPass(prepared.url, '11', label);
+              } catch (error) {
+                errors.push(`Preprocessing ${label}: ${error?.message || String(error)}`);
+              } finally {
+                prepared?.release();
+              }
+            }
+            bestPassIndex = passes.reduce((best, pass, index) =>
+              pass.quality > passes[best].quality ? index : best, 0);
+          }
+
+          if (!passes.some(pass => !pass.error) && !scan_diagnostics) {
+            throw new Error(errors.join('; ') || 'Nessun passaggio OCR riuscito');
+          }
+
+          const payload = {
+            scanOcrVersion: 2,
+            language,
+            passes,
+            bestPassIndex,
+            secondPassExecuted: passes.length > 1,
+            preprocessingExecuted,
+            errors,
+            warning: errors.length ? 'Alcuni tentativi OCR non sono riusciti.' : '',
+          };
+          return scan_diagnostics
+            ? JSON.stringify(payload)
+            : (passes[bestPassIndex]?.text || '');
+        };
+        return await Promise.race([
+          operation(),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error('Tempo OCR esaurito')), 180000);
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+        await worker.terminate();
+      }
+    }
+
+    // Text-only compatibility: preserve repeated lines WITHIN a pass, take
+    // their maximum multiplicity across passes, never sum the two passes.
+    function _mergeOcrPassText(passes) {
+      const lines = new Map();
+      for (const text of passes) {
+        const counts = new Map();
+        for (const line of text.split(/\r?\n/).map(s => s.trim()).filter(Boolean)) {
+          const key = line.normalize('NFKD').toLowerCase().replace(/\s+/g, ' ');
+          const count = (counts.get(key) || 0) + 1;
+          counts.set(key, count);
+          if (count > (lines.get(key)?.count || 0)) lines.set(key, {text: line, count});
+        }
+      }
+      return [...lines.values()].flatMap(x => Array(x.count).fill(x.text)).join('\n');
+    }
+  </script>
+  <script src="backup_transfer.js"></script>
+  <script src="migration_guide.js"></script>
+  <script src="voice_bridge.js"></script>
+  <script src="app_messages.js" defer></script>
+  <script src="admin_bridge.js" defer></script>
+  <script src="admin_preview.js?v=dotapp-migration-v47-92a85c633777" defer></script>
+  <script src="flutter_bootstrap.js?v=dotapp-migration-v47-92a85c633777" async></script>
+</body>
+</html>
