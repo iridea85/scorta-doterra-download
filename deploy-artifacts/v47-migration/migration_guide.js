@@ -3,8 +3,12 @@
   'use strict';
   const NEW_APP = 'https://do-tapp.it/';
   const DISMISSED = 'dotapp_migration_notice_dismissed_v1';
+  const LEGACY_PATHS = [
+    '/scorta-doterra-download/app/',
+    '/scorta-doterra-download/app-v14/',
+  ];
   const legacy = () => location.origin === 'https://iridea85.github.io' &&
-    location.pathname.startsWith('/scorta-doterra-download/app/');
+    LEGACY_PATHS.some(path => location.pathname.startsWith(path));
   const current = () => location.origin === 'https://do-tapp.it';
   let hiddenThisVisit = false;
   const buttonStyle = 'font:inherit;font-size:14px;min-height:44px;padding:10px 12px;border:1px solid #d8c9de;border-radius:10px;background:white;color:#60476b;cursor:pointer';

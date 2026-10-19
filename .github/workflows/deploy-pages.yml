@@ -318,7 +318,7 @@ jobs:
           const CACHE_NAME='scorta-doterra-app-v14-${PWA_FIX_VERSION}';
           const CACHE_VERSION='${PWA_FIX_VERSION}';
           const APP_SCOPE='/scorta-doterra-download/app-v14/';
-          const CORE=['./','./index.html','./flutter_bootstrap.js','./main.dart.js','./manifest.json','./assets/AssetManifest.bin.json','./assets/FontManifest.json'];
+          const CORE=['./','./index.html','./flutter_bootstrap.js','./main.dart.js','./manifest.json','./assets/AssetManifest.bin.json','./assets/FontManifest.json','./migration_guide.js'];
           const SCORTA_CACHE_PREFIXES=['scorta-doterra-pwa-','scorta-doterra-app-v14-'];
 
           const versionedUrl=input=>{
