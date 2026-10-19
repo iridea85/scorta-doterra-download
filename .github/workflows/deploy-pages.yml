@@ -277,8 +277,8 @@ jobs:
               count=1,
           )
           html, bootstrap_count = re.subn(
-              r'src="flutter_bootstrap\.js(?:\?[^\"]*)?"',
-              f'src="flutter_bootstrap.js?v={version}"',
+              r'''src=(["'])flutter_bootstrap\.js(?:\?[^"']*)?\1''',
+              lambda m: f'src={m[1]}flutter_bootstrap.js?v={version}{m[1]}',
               html,
               count=1,
           )
@@ -318,7 +318,7 @@ jobs:
           const CACHE_NAME='scorta-doterra-app-v14-${PWA_FIX_VERSION}';
           const CACHE_VERSION='${PWA_FIX_VERSION}';
           const APP_SCOPE='/scorta-doterra-download/app-v14/';
-          const CORE=['./','./index.html','./flutter_bootstrap.js','./main.dart.js','./manifest.json','./assets/AssetManifest.bin.json','./assets/FontManifest.json','./migration_guide.js'];
+          const CORE=['./','./index.html','./flutter_bootstrap.js','./main.dart.js','./manifest.json','./assets/AssetManifest.bin.json','./assets/FontManifest.json','./migration_guide.js','./transfer_config.js','./transfer_protocol.js','./backup_transfer.js'];
           const SCORTA_CACHE_PREFIXES=['scorta-doterra-pwa-','scorta-doterra-app-v14-'];
 
           const versionedUrl=input=>{
@@ -396,3 +396,4 @@ jobs:
       - name: Pubblica
         id: deployment
         uses: actions/deploy-pages@v4
+

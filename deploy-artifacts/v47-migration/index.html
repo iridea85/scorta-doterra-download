@@ -16,7 +16,7 @@
 
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="icons/Icon-192.png">
-  <link rel="manifest" href="manifest.json?v=dotapp-migration-v47-1a6de7b3557b">
+  <link rel="manifest" href="manifest.json?v=dotapp-auto-v2-40a45e0060b7">
 
   <title>dōtapp</title>
 </head>
@@ -28,6 +28,8 @@
   <script>window.addEventListener('flutter-first-frame', () => document.getElementById('dotapp-launch')?.remove(), {once:true});</script>
   <script>
     (() => {
+      if (/^#transfer=[a-f0-9]{64}$/.test(location.hash)) return;
+      try {if(localStorage.getItem('dotapp_transfer_completed_v2')==='true')return;}catch(_){}
       const standalone =
         window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true;
@@ -93,6 +95,7 @@
       }
 
       window.addEventListener('beforeinstallprompt', (event) => {
+        if(window.dotappMigrationOwnsInstall)return;
         event.preventDefault();
         deferredPrompt = event;
 
@@ -297,12 +300,49 @@
       return [...lines.values()].flatMap(x => Array(x.count).fill(x.text)).join('\n');
     }
   </script>
+  <script>
+/* Independent startup guard: installation UX must never own the Flutter lifecycle. */
+(() => {
+  'use strict';
+  const w=window;let started=false,firstFrame=false,timer;
+  function loadError(){
+    if(firstFrame)return;
+    const splash=document.getElementById('dotapp-launch');if(!splash)return;
+    splash.replaceChildren();
+    const title=document.createElement('strong');title.textContent='dōtapp';splash.append(title);
+    const text=document.createElement('p');text.textContent='L’app non si è ancora avviata. I tuoi dati sono conservati.';splash.append(text);
+    const retry=document.createElement('button');retry.textContent='RIPROVA APERTURA';retry.type='button';
+    retry.style.cssText='font:inherit;padding:14px;border:0;border-radius:12px;background:#6e5578;color:white;margin:16px';
+    retry.onclick=()=>location.reload();splash.append(retry);
+  }
+  w.dotappApplicationBootError=loadError;
+  w.addEventListener('flutter-first-frame',()=>{firstFrame=true;w.clearTimeout(timer);document.getElementById('dotapp-launch')?.remove();},{once:true});
+  w.dotappStartApplication=()=>{
+    if(started)return;
+    // An unfinished backup journal is handled by the existing manual recovery, never discarded.
+    try{if(localStorage.getItem('dotapp_backup_restore_journal_v1')!==null){
+      const splash=document.getElementById('dotapp-launch');if(splash){splash.replaceChildren();const t=document.createElement('p');t.textContent='Completa il ripristino dei dati precedenti.';splash.append(t);const b=document.createElement('button');b.textContent='RIPRISTINA DATI PRECEDENTI';b.onclick=()=>w.dotappBackup?.open();splash.append(b);}return;
+    }}catch(_){}
+    started=true;
+    try{const s=document.createElement('script');s.src='flutter_bootstrap.js?v=dotapp-post-transfer-v3';s.async=true;s.onerror=loadError;document.body.append(s);timer=w.setTimeout(loadError,20000);}catch(_){started=false;loadError();}
+  };
+  // A missing, blocked or broken migration script cannot leave the normal app at the splash.
+  function fallback(){if(!w.dotappMigrationManaged)w.dotappStartApplication();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>w.setTimeout(fallback,0),{once:true});else w.setTimeout(fallback,0);
+  w.addEventListener('error',()=>{if(started)loadError();});
+  w.addEventListener('unhandledrejection',()=>{if(started)loadError();});
+})();
+
+</script>
   <script src="backup_transfer.js"></script>
-  <script src="migration_guide.js"></script>
+  <script src="transfer_config.js"></script>
+  <script src="transfer_protocol.js"></script>
+  <script src="migration_guide.js?v=post-transfer-v3"></script>
+  <script>if("serviceWorker" in navigator)navigator.serviceWorker.register("flutter_service_worker.js",{updateViaCache:"none"}).catch(()=>{});</script>
   <script src="voice_bridge.js"></script>
   <script src="app_messages.js" defer></script>
   <script src="admin_bridge.js" defer></script>
-  <script src="admin_preview.js?v=dotapp-migration-v47-1a6de7b3557b" defer></script>
-  <script src="flutter_bootstrap.js?v=dotapp-migration-v47-1a6de7b3557b" async></script>
+  <script src="admin_preview.js?v=dotapp-auto-v2-40a45e0060b7" defer></script>
+
 </body>
 </html>
