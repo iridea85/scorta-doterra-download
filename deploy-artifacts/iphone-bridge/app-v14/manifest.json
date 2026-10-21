@@ -1,0 +1,41 @@
+{
+  "id": "/scorta-doterra-download/app-v14/",
+  "name": "dōtapp",
+  "short_name": "dōtapp",
+  "start_url": "/scorta-doterra-download/app-v14/",
+  "scope": "/scorta-doterra-download/app-v14/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#F7F5F7",
+  "theme_color": "#6E5578",
+  "description": "La tua scorta di oli, organizzata.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "categories": [
+    "productivity",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

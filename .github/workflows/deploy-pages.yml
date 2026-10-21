@@ -18,6 +18,8 @@ on:
       - "deploy-artifacts/scorta-doterra-preview-v33-*"
       - "deploy-artifacts/v47-migration/**"
       - "deploy-artifacts/v47-migration.sha256"
+      - "deploy-artifacts/iphone-bridge*/**"
+      - "deploy-artifacts/iphone-bridge*-files.json"
       - "Work-Tracker-Android.apk"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -374,6 +376,43 @@ jobs:
           (cd site/app && zip -qr "$approved_zip" .)
           python3 tests/test_pwa_update.py site "$approved_zip"
 
+      - name: Publish immutable legacy iPhone bridge candidate 66c6f462
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Reuse the immutable approved modern app assets; never rebuild them.
+          bridge_base="$(mktemp -d)"
+          curl -fL --retry 3 "https://github.com/iridea85/dotapp-site/archive/c94184c1b818991c9221153556a276145ccef7f7.tar.gz" -o "$bridge_base/source.tar.gz"
+          mkdir -p "$bridge_base/source" "$bridge_base/root"
+          tar -xzf "$bridge_base/source.tar.gz" --strip-components=1 -C "$bridge_base/source"
+          (
+            cd "$bridge_base/source"
+            cat deploy-artifacts/dotapp-root.zip.part-* > deploy-artifacts/dotapp-root.zip
+            sha256sum -c deploy-artifacts/dotapp-root.sha256
+            unzip -oq deploy-artifacts/dotapp-root.zip -d "$bridge_base/root"
+            sha256sum -c deploy-artifacts/v47-migration.sha256
+            cp -R deploy-artifacts/v47-migration/. "$bridge_base/root/"
+            sha256sum -c deploy-artifacts/pwa-install-v2.sha256
+            cp -R deploy-artifacts/pwa-install-v2/. "$bridge_base/root/"
+          )
+          # Only these two build output paths change; browser data is untouched.
+          for app_path in app app-v14; do
+            rm -rf "site/$app_path"
+            cp -R "$bridge_base/root" "site/$app_path"
+            cp -R "deploy-artifacts/iphone-bridge/$app_path/." "site/$app_path/"
+          done
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import hashlib, json
+          for name in ('app', 'app-v14'):
+              root = Path('site') / name
+              expected = json.loads(Path(f'deploy-artifacts/iphone-bridge-{name}-files.json').read_text())
+              actual = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                        for p in root.rglob('*') if p.is_file()}
+              assert actual == expected, f'iPhone bridge candidate bytes differ: {name}'
+          print('Exact candidate 66c6f462 legacy bundles verified')
+          PYTHON
+
       - name: Mantieni pagine e download esistenti
         run: |
           set -e
@@ -396,4 +435,3 @@ jobs:
       - name: Pubblica
         id: deployment
         uses: actions/deploy-pages@v4
-
