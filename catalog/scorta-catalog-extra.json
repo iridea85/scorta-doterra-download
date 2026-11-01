@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "catalogVersion": "2026.10.01.shop.2",
-  "updatedAt": "2026-10-01",
+  "catalogVersion": "2026.11.01.shop.1",
+  "updatedAt": "2026-11-01",
   "source": "Shop ufficiale doTERRA Italia e pagine ufficiali doTERRA di altri mercati",
   "note": "Integrazioni al catalogo base: prodotti recenti, speciali, storici/internazionali, nuovi formati e alias italiani/inglesi verificati su fonti ufficiali doTERRA.",
   "products": [
@@ -443,6 +443,73 @@
         "IKISE Pro Set",
         "Set completo IKISE",
         "IKISE Skin Ritual Pro"
+      ]
+    },
+    {
+      "name": "Harvest Spice",
+      "category": "Miscele, Touch e formati speciali",
+      "unit": "15 ml",
+      "aliases": [
+        "Harvest Spice™",
+        "Harvest Spice Gathering Blend",
+        "Harvest Spice Miscela festiva",
+        "Miscela festiva Harvest Spice"
+      ]
+    },
+    {
+      "name": "Stick + Storace PastTense™",
+      "category": "Cura personale",
+      "unit": "10 g",
+      "aliases": [
+        "PastTense Stick + Sweet Gum",
+        "PastTense Stick + Storace",
+        "PastTense Stick con Storace",
+        "PastTense™ Stick + Sweet Gum",
+        "PastTense Stick + Liquidambar"
+      ]
+    },
+    {
+      "name": "Kit Autumn Exclusives 2026",
+      "category": "Kit e collezioni",
+      "unit": "1 kit",
+      "aliases": [
+        "Autumn Exclusives Kit 2026",
+        "Kit esclusivi autunno 2026",
+        "Autumn Exclusives 2026",
+        "Kit PastTense e InTune 2026"
+      ]
+    },
+    {
+      "name": "Olio di ricino dōTERRA",
+      "category": "Accessori",
+      "unit": "300 ml",
+      "aliases": [
+        "Castor Oil",
+        "dōTERRA Castor Oil",
+        "Olio vettore di ricino",
+        "Olio di ricino 300 ml"
+      ]
+    },
+    {
+      "name": "dōTERRA Shinrin-Yoku™ Hair & Beard Oil",
+      "category": "Cura dei capelli",
+      "unit": "30 ml",
+      "aliases": [
+        "Shinrin-Yoku Hair & Beard Oil Blend",
+        "Olio per capelli e barba Shinrin-Yoku",
+        "Olio Shinrin-Yoku per capelli e barba",
+        "Miscela olio capelli barba Shinrin-Yoku"
+      ]
+    },
+    {
+      "name": "Wintergreen",
+      "category": "Oli essenziali singoli",
+      "unit": "15 ml",
+      "aliases": [
+        "Wintergreen Essential Oil",
+        "Gaultheria fragrantissima",
+        "Gaulteria",
+        "Olio essenziale Wintergreen"
       ]
     }
   ]
